@@ -1,0 +1,58 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { getCurrentUser } from "@/lib/session"
+import { prisma } from "@/lib/db"
+import { inngest } from "@/lib/inngest/client"
+import { processIngestItemById } from "@/lib/ingest"
+
+export async function POST(request: NextRequest) {
+  let ingestItem: Awaited<ReturnType<typeof prisma.ingestItem.create>> | null = null
+  try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { url } = body
+
+    if (!url) {
+      return NextResponse.json({ error: "URL is required" }, { status: 400 })
+    }
+
+    // Create ingest item
+    ingestItem = await prisma.ingestItem.create({
+      data: {
+        userId: user.id,
+        type: "URL",
+        source: "manual",
+        rawText: url,
+        status: "PENDING",
+        meta: { url },
+      },
+    })
+    let queued = false
+    try {
+      await inngest.send({
+        name: "ingest/process",
+      data: {
+        ingestItemId: ingestItem.id,
+      },
+    })
+      queued = true
+    } catch (sendError) {
+      console.error("[v0] inngest send failed, running inline", sendError)
+      await processIngestItemById(ingestItem.id)
+    }
+
+    return NextResponse.json({ ingestItemId: ingestItem.id, status: queued ? "QUEUED" : "COMPLETED" })
+  } catch (error) {
+    console.error("[v0] URL ingest error:", error)
+    if (ingestItem) {
+      await prisma.ingestItem.update({
+        where: { id: ingestItem.id },
+        data: { status: "ERROR" },
+      })
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
