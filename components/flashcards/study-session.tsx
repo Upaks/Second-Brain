@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Flashcard } from "@/lib/flashcards"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, ArrowRight, RefreshCcw, Sparkles } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 
 interface StudySessionProps {
   deckName: string
@@ -16,6 +17,16 @@ interface StudySessionProps {
 }
 
 type ReviewRating = "again" | "hard" | "good" | "easy"
+
+type GoalMode = "cards" | "minutes"
+
+interface StudyGoal {
+  mode: GoalMode
+  amount: number
+}
+
+const GOAL_STORAGE_KEY = "sb-study-goal"
+const DEFAULT_GOAL: StudyGoal = { mode: "cards", amount: 10 }
 
 function nextDifficulty(score: number, rating: ReviewRating) {
   switch (rating) {
@@ -54,6 +65,40 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
   const [showBack, setShowBack] = useState(false)
   const [ratingHistory, setRatingHistory] = useState<Record<string, ReviewRating[]>>({})
   const [scores, setScores] = useState<Record<string, number>>({})
+  const [goal, setGoal] = useState<StudyGoal>(DEFAULT_GOAL)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const timerStartRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem(GOAL_STORAGE_KEY)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Partial<StudyGoal>
+        if (parsed && (parsed.mode === "cards" || parsed.mode === "minutes") && typeof parsed.amount === "number") {
+          setGoal({ mode: parsed.mode, amount: Math.max(1, Math.round(parsed.amount)) })
+        }
+      } catch (error) {
+        console.warn("[flashcards] failed to parse stored study goal", error)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(goal))
+  }, [goal])
+
+  useEffect(() => {
+    timerStartRef.current = Date.now()
+    setElapsedSeconds(0)
+    const interval = window.setInterval(() => {
+      if (!timerStartRef.current) return
+      const diff = Math.floor((Date.now() - timerStartRef.current) / 1000)
+      setElapsedSeconds(diff)
+    }, 1000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   const totalCards = flashcards.length
   const safeIndex = totalCards > 0 ? Math.min(index, totalCards - 1) : 0
@@ -90,6 +135,23 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
     return { counts, total, mastery }
   }, [ratingHistory])
 
+  const reviewedCount = aggregatedStats.total
+  const elapsedMinutes = elapsedSeconds / 60
+  const goalAmount = Math.max(goal.amount, 1)
+  const cardsProgress = Math.min(reviewedCount / goalAmount, 1)
+  const minutesProgress = Math.min(elapsedMinutes / goalAmount, 1)
+  const progressValue = Math.round((goal.mode === "cards" ? cardsProgress : minutesProgress) * 100)
+  const goalReached = progressValue >= 100
+  const remaining = goal.mode === "cards"
+    ? Math.max(goalAmount - reviewedCount, 0)
+    : Math.max(goalAmount - elapsedMinutes, 0)
+
+  const quickOptions = goal.mode === "cards" ? [5, 10, 15] : [5, 10, 20]
+
+  function setGoalMode(mode: GoalMode) {
+    setGoal((prev) => ({ mode, amount: mode === prev.mode ? prev.amount : mode === "cards" ? 10 : 10 }))
+  }
+
   function handleFlip() {
     setShowBack((prev) => !prev)
   }
@@ -119,6 +181,62 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
 
   return (
     <div className="flex flex-col gap-6">
+      <Card className={cn("border border-primary/30 bg-primary/5 p-4", goalReached && "border-primary/60")}
+        data-slot="study-goal">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase text-primary">Daily review goal</p>
+            <h3 className="text-lg font-semibold">
+              {goal.mode === "cards" ? `Review ${goalAmount} cards` : `Stay focused for ${goalAmount} minutes`}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {goal.mode === "cards"
+                ? `${Math.min(reviewedCount, goalAmount)} / ${goalAmount} cards reviewed`
+                : `${Math.min(elapsedMinutes, goalAmount).toFixed(1)} / ${goalAmount} minutes logged`}
+              {goalReached && <span className="ml-2 text-primary font-semibold">Goal reached 🎉</span>}
+            </p>
+            {!goalReached && (
+              <p className="text-xs text-muted-foreground">
+                {goal.mode === "cards"
+                  ? `${remaining} card${Math.round(remaining) === 1 ? "" : "s"} to go`
+                  : `${remaining.toFixed(1)} minute${remaining <= 1.5 ? "" : "s"} remaining`}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={goal.mode === "cards" ? "default" : "outline"}
+                onClick={() => setGoalMode("cards")}
+              >
+                Cards
+              </Button>
+              <Button
+                size="sm"
+                variant={goal.mode === "minutes" ? "default" : "outline"}
+                onClick={() => setGoalMode("minutes")}
+              >
+                Minutes
+              </Button>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              {quickOptions.map((value) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={goal.amount === value ? "secondary" : "outline"}
+                  onClick={() => setGoal((prev) => ({ ...prev, amount: value }))}
+                >
+                  {value} {goal.mode === "cards" ? "cards" : "min"}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <Progress value={progressValue} className="mt-4" />
+      </Card>
+
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">

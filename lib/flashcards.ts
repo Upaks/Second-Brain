@@ -130,6 +130,26 @@ export function buildFlashcardsFromInsights(insights: InsightForFlashcard[]): Fl
   return insights.map((insight) => buildFlashcardFromInsight(insight))
 }
 
+function escapeCsvField(value: string) {
+  return JSON.stringify(value ?? "")
+}
+
+function flattenKeyPoints(card: Flashcard) {
+  return card.keyPoints.join(" ;; ")
+}
+
+function flattenPrompts(card: Flashcard) {
+  return card.followUpPrompts.join(" ;; ")
+}
+
+function flattenTags(card: Flashcard) {
+  return card.tags.join(" ;; ")
+}
+
+function flattenSourceUrl(card: Flashcard) {
+  return card.source?.url ?? ""
+}
+
 export function flashcardsToCsv(flashcards: Flashcard[]): string {
   const header = [
     "title",
@@ -142,15 +162,76 @@ export function flashcardsToCsv(flashcards: Flashcard[]): string {
     "source_url",
   ]
   const rows = flashcards.map((card) => [
-    JSON.stringify(card.title ?? ""),
-    JSON.stringify(card.question ?? ""),
-    JSON.stringify(card.answer ?? ""),
-    JSON.stringify(card.keyPoints.join(" ;; ")),
-    JSON.stringify(card.followUpPrompts.join(" ;; ")),
-    JSON.stringify(card.difficulty),
-    JSON.stringify(card.tags.join(" ;; ")),
-    JSON.stringify(card.source?.url ?? ""),
+    escapeCsvField(card.title ?? ""),
+    escapeCsvField(card.question ?? ""),
+    escapeCsvField(card.answer ?? ""),
+    escapeCsvField(flattenKeyPoints(card)),
+    escapeCsvField(flattenPrompts(card)),
+    escapeCsvField(card.difficulty ?? ""),
+    escapeCsvField(flattenTags(card)),
+    escapeCsvField(flattenSourceUrl(card)),
   ])
+  return [header.map((h) => JSON.stringify(h)).join(","), ...rows.map((row) => row.join(","))].join("\n")
+}
+
+function escapeForDelimited(value: string | null | undefined) {
+  return (value ?? "")
+    .replace(/\r?\n/g, " <br> ")
+    .replace(/\t/g, "    ")
+    .trim()
+}
+
+function buildBackContent(card: Flashcard) {
+  const parts: string[] = []
+  if (card.answer) parts.push(card.answer)
+  if (card.keyPoints.length) parts.push(`Key points: ${card.keyPoints.join(" · ")}`)
+  if (card.followUpPrompts.length) parts.push(`Reflect: ${card.followUpPrompts.join(" · ")}`)
+  return parts.join("<br><br>")
+}
+
+export function flashcardsToAnkiTsv(flashcards: Flashcard[]): string {
+  const lines = flashcards.map((card) => {
+    const front = escapeForDelimited(card.question)
+    const back = escapeForDelimited(buildBackContent(card))
+    const tags = card.tags.map((tag) => tag.replace(/\s+/g, "_")).join(" ")
+    return `${front}\t${back}\t${tags}`
+  })
+  return lines.join("\n")
+}
+
+export function flashcardsToQuizletText(flashcards: Flashcard[]): string {
+  return flashcards
+    .map((card) => {
+      const front = escapeForDelimited(card.question)
+      const back = escapeForDelimited(buildBackContent(card))
+      return `${front}\t${back}`
+    })
+    .join("\n")
+}
+
+export function flashcardsToNotionCsv(flashcards: Flashcard[]): string {
+  const header = [
+    "Title",
+    "Answer",
+    "Key Points",
+    "Reflection Prompts",
+    "Difficulty",
+    "Tags",
+    "Source URL",
+    "Created",
+  ]
+
+  const rows = flashcards.map((card) => [
+    escapeCsvField(card.question ?? card.title ?? ""),
+    escapeCsvField(card.answer ?? ""),
+    escapeCsvField(flattenKeyPoints(card)),
+    escapeCsvField(flattenPrompts(card)),
+    escapeCsvField(card.difficulty ?? ""),
+    escapeCsvField(card.tags.join(", ")),
+    escapeCsvField(flattenSourceUrl(card)),
+    escapeCsvField(card.createdAt ?? ""),
+  ])
+
   return [header.map((h) => JSON.stringify(h)).join(","), ...rows.map((row) => row.join(","))].join("\n")
 }
 

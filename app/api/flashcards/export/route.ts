@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 import { getCurrentUser } from "@/lib/session"
-import { flashcardsToCsv } from "@/lib/flashcards"
+import {
+  flashcardsToCsv,
+  flashcardsToAnkiTsv,
+  flashcardsToQuizletText,
+  flashcardsToNotionCsv,
+} from "@/lib/flashcards"
 import { getDeckById } from "@/lib/flashcards-server"
 import { generateFlashcardsPdf } from "@/lib/flashcards-pdf"
 
@@ -66,6 +71,36 @@ async function handleExport({
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="${safeName}-flashcards.csv"`,
+      },
+    })
+  }
+
+  if (format === "notion") {
+    const csv = flashcardsToNotionCsv(flashcards)
+    return new Response(csv, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${safeName}-notion.csv"`,
+      },
+    })
+  }
+
+  if (format === "anki") {
+    const tsv = flashcardsToAnkiTsv(flashcards)
+    return new Response(tsv, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${safeName}-anki.tsv"`,
+      },
+    })
+  }
+
+  if (format === "quizlet") {
+    const text = flashcardsToQuizletText(flashcards)
+    return new Response(text, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${safeName}-quizlet.txt"`,
       },
     })
   }

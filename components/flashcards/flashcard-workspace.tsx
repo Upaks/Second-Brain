@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   DndContext,
   PointerSensor,
@@ -23,48 +23,46 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { Download, Loader2, Maximize2, Rows2, Rows3, Rows, PlayCircle } from "lucide-react"
+import { Download, Loader2, Maximize2, Rows2, Rows3, Rows, Share2, Wand2 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { StudySession } from "./study-session"
 
-export interface FlashcardDeck {
-  id: string
-  name: string
-  description?: string
-  flashcards: Flashcard[]
-}
-
-interface FlashcardWorkspaceProps {
-  decks: FlashcardDeck[]
-  totalInsights: number
-}
-
-const themes = [
-  { id: "default", label: "Classic" },
-  { id: "midnight", label: "Midnight" },
-  { id: "sunrise", label: "Sunrise" },
+const cardThemes = [
+  { id: "default", label: "Classic", swatch: "bg-white" },
+  { id: "midnight", label: "Midnight", swatch: "bg-slate-900" },
+  {
+    id: "sunrise",
+    label: "Sunrise",
+    swatch: "bg-gradient-to-br from-amber-300 via-rose-200 to-emerald-200",
+  },
+  {
+    id: "nebula",
+    label: "Nebula",
+    swatch: "bg-gradient-to-br from-indigo-700 via-purple-600 to-cyan-500",
+  },
 ] as const
 
 const boardBackgrounds = [
-  { id: "plain", label: "Neutral", className: "bg-slate-50 dark:bg-slate-900" },
+  { id: "plain", label: "Neutral", className: "bg-slate-50" },
   {
     id: "warm",
-    label: "Sunset",
-    className: "bg-gradient-to-br from-rose-50 via-amber-50 to-emerald-50 dark:from-slate-900 dark:via-slate-950 dark:to-black",
+    label: "Sunset wash",
+    className: "bg-gradient-to-br from-rose-200/60 via-amber-200/60 to-orange-200/60",
   },
   {
     id: "cool",
-    label: "Aurora",
-    className: "bg-gradient-to-br from-blue-50 via-sky-100 to-indigo-50 dark:from-slate-900 dark:via-slate-950 dark:to-gray-900",
+    label: "Aurora mist",
+    className: "bg-gradient-to-br from-sky-200/60 via-indigo-200/60 to-violet-200/60",
   },
 ] as const
 
@@ -80,6 +78,32 @@ const fonts = [
   { id: "mono", label: "Mono" },
 ] as const
 
+const heroGradients = [
+  "bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.25),_transparent_55%)]",
+  "bg-[radial-gradient(circle_at_top_right,_rgba(236,72,153,0.35),_transparent_50%)]",
+  "bg-[radial-gradient(circle_at_bottom_left,_rgba(14,165,233,0.25),_transparent_50%)]",
+] as const
+
+type LayoutMode = "grid" | "stack" | "storyboard"
+
+const layoutClasses: Record<LayoutMode, string> = {
+  grid: "grid gap-6 sm:grid-cols-2 xl:grid-cols-3",
+  stack: "flex flex-col gap-4",
+  storyboard: "grid auto-rows-[minmax(220px,auto)] gap-6 md:grid-cols-3",
+}
+
+export interface FlashcardDeck {
+  id: string
+  name: string
+  description?: string
+  flashcards: Flashcard[]
+}
+
+interface FlashcardWorkspaceProps {
+  decks: FlashcardDeck[]
+  totalInsights: number
+}
+
 interface SortableFlashcardProps {
   card: Flashcard
   showBack: boolean
@@ -88,6 +112,14 @@ interface SortableFlashcardProps {
   fontFamily: "sans" | "serif" | "mono"
   isSelected: boolean
   onSelect: (card: Flashcard) => void
+}
+
+function uniqueTagList(cards: Flashcard[]): string[] {
+  const tagSet = new Set<string>()
+  cards.forEach((card) => {
+    card.tags.forEach((tag) => tagSet.add(tag))
+  })
+  return Array.from(tagSet)
 }
 
 function SortableFlashcard({
@@ -99,19 +131,15 @@ function SortableFlashcard({
   isSelected,
   onSelect,
 }: SortableFlashcardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: card.id,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: card.id })
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
       {...attributes}
       {...listeners}
       className={cn("cursor-grab active:cursor-grabbing", isDragging && "z-50 scale-105")}
@@ -132,7 +160,23 @@ function SortableFlashcard({
   )
 }
 
-type LayoutMode = "grid" | "stack" | "storyboard"
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-inner backdrop-blur">
+      <p className="text-xs font-semibold uppercase tracking-wide text-white/70">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+    </div>
+  )
+}
+
+function ControlColumn({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm", className)}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <div className="mt-3 space-y-3">{children}</div>
+    </div>
+  )
+}
 
 export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceProps) {
   const [selectedDeckId, setSelectedDeckId] = useState(() => decks[0]?.id ?? "")
@@ -147,7 +191,10 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
   const [isExporting, setIsExporting] = useState(false)
   const [isStudyOpen, setIsStudyOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
-  const [studyMode, setStudyMode] = useState<"learn" | "review">("learn")
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
     const deck = decks.find((d) => d.id === selectedDeckId)
@@ -157,13 +204,9 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
     }
   }, [selectedDeckId, decks])
 
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
-
   const selectedDeck = useMemo(() => decks.find((d) => d.id === selectedDeckId), [selectedDeckId, decks])
+  const uniqueTags = useMemo(() => uniqueTagList(cards), [cards])
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -176,13 +219,9 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
     })
   }
 
-  const layoutClasses: Record<LayoutMode, string> = {
-    grid: "grid gap-6 sm:grid-cols-2 xl:grid-cols-3",
-    stack: "flex flex-col gap-4",
-    storyboard: "grid auto-rows-[minmax(220px,auto)] gap-6 md:grid-cols-3",
-  }
+  type ExportFormat = "json" | "csv" | "pdf" | "anki" | "quizlet" | "notion"
 
-  async function handleExport(format: "json" | "csv" | "pdf") {
+  async function handleExport(format: ExportFormat) {
     if (!selectedDeck || isExporting) return
     setIsExporting(true)
     try {
@@ -205,9 +244,16 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
-      const extension = format === "json" ? "json" : format === "csv" ? "csv" : "pdf"
+      const extensionMap: Record<ExportFormat, string> = {
+        json: "json",
+        csv: "csv",
+        pdf: "pdf",
+        notion: "csv",
+        anki: "tsv",
+        quizlet: "txt",
+      }
       link.href = url
-      link.download = `${filenameBase}-flashcards.${extension}`
+      link.download = `${filenameBase}-flashcards.${extensionMap[format] ?? "txt"}`
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -220,238 +266,292 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
     }
   }
 
+  const deckName = selectedDeck?.name ?? "All insights"
+  const deckDescription =
+    selectedDeck?.description ??
+    "Arrange, remix, and reinforce the ideas that matter without losing the context that made them meaningful."
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold leading-tight">Flashcards</h2>
-            <Badge variant="secondary" className="text-xs">
-              Studio
+    <div className="space-y-12">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-8 text-slate-100 shadow-[0_30px_60px_-20px_rgba(15,23,42,0.65)]">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/30 via-slate-900/40 to-slate-950/80" />
+        {heroGradients.map((gradient, idx) => (
+          <div key={idx} className={cn("pointer-events-none absolute inset-0 mix-blend-screen", gradient)} />
+        ))}
+        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-5">
+            <Badge variant="secondary" className="bg-white/10 text-white/80">
+              Deck overview
             </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {cards.length} card{cards.length === 1 ? "" : "s"} in{" "}
-            <span className="font-medium">{selectedDeck?.name ?? "deck"}</span> · {totalInsights} insights total
-          </p>
-
-          <Tabs value={showFace} onValueChange={(value) => setShowFace(value as "front" | "back")}>
-            <TabsList>
-              <TabsTrigger value="front">Front view</TabsTrigger>
-              <TabsTrigger value="back">Back view</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Select value={selectedDeckId} onValueChange={setSelectedDeckId}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="Select a deck" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {decks.map((deck) => (
-                <SelectItem key={deck.id} value={deck.id}>
-                  {deck.name} ({deck.flashcards.length})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-2 rounded-full border bg-background/70 px-4 py-2 shadow-sm">
-            {themes.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => setTheme(option.id)}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full border transition-all",
-                  theme === option.id
-                    ? "border-primary ring-2 ring-primary/40"
-                    : "border-border hover:border-primary/40",
-                )}
-                title={option.label}
-                type="button"
-              >
-                <span
-                  className={cn(
-                    "h-6 w-6 rounded-full border",
-                    option.id === "default" && "bg-white",
-                    option.id === "midnight" && "bg-slate-900",
-                    option.id === "sunrise" && "bg-gradient-to-br from-amber-200 via-pink-200 to-rose-200",
-                  )}
-                />
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 shadow-sm">
-            {cardSizes.map((entry) => (
-              <Button
-                key={entry.id}
-                variant={cardSize === entry.id ? "default" : "ghost"}
-                size="sm"
-                className="rounded-full"
-                onClick={() => setCardSize(entry.id as typeof cardSize)}
-              >
-                {entry.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 shadow-sm">
-            {fonts.map((entry) => (
-              <Button
-                key={entry.id}
-                variant={fontFamily === entry.id ? "default" : "ghost"}
-                size="sm"
-                className="rounded-full capitalize"
-                onClick={() => setFontFamily(entry.id as typeof fontFamily)}
-              >
-                {entry.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1 rounded-full border bg-background/70 px-2 py-1.5 shadow-sm">
-            <Button
-              type="button"
-              variant={layoutMode === "grid" ? "default" : "ghost"}
-              size="icon"
-              className="rounded-full"
-              onClick={() => setLayoutMode("grid")}
-            >
-              <Rows3 className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant={layoutMode === "stack" ? "default" : "ghost"}
-              size="icon"
-              className="rounded-full"
-              onClick={() => setLayoutMode("stack")}
-            >
-              <Rows2 className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant={layoutMode === "storyboard" ? "default" : "ghost"}
-              size="icon"
-              className="rounded-full"
-              onClick={() => setLayoutMode("storyboard")}
-            >
-              <Rows className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <Select value={boardBackground} onValueChange={setBoardBackground}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Canvas" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {boardBackgrounds.map((entry) => (
-                <SelectItem key={entry.id} value={entry.id}>
-                  {entry.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2" disabled={isExporting}>
-                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                {isExporting ? "Exporting…" : "Export"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("json")}>Download JSON</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("csv")}>Download CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("pdf")}>Download PDF</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1fr,320px]">
-        <div
-          className={cn(
-            "rounded-3xl border border-dashed p-6 shadow-inner transition-colors",
-            boardBackgrounds.find((entry) => entry.id === boardBackground)?.className ??
-              boardBackgrounds[0].className,
-          )}
-          onClick={() => setFocusCard(null)}
-        >
-          {cards.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-10 text-center text-muted-foreground bg-white/60 dark:bg-slate-900/60">
-              No flashcards available for this deck yet.
+            <div className="space-y-4">
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{deckName}</h1>
+              <p className="max-w-xl text-sm text-slate-200/80">{deckDescription}</p>
             </div>
-          ) : isMounted ? (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <SortableContext items={cards.map((card) => card.id)} strategy={rectSortingStrategy}>
-                <div className={cn(layoutClasses[layoutMode])}>
+            <div className="flex flex-wrap gap-3">
+              <Button className="gap-2 bg-white text-slate-900 hover:bg-slate-100" onClick={() => setIsStudyOpen(true)}>
+                <Wand2 className="h-4 w-4" />
+                Launch study session
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="gap-2 border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    Export deck
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuLabel>Standard exports</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleExport("json")}>JSON (structured)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>CSV (spreadsheet)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("pdf")}>PDF (printable)</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Bring it to other tools</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleExport("anki")}>Anki TSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("quizlet")}>Quizlet text</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("notion")}>Notion CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="ghost" className="gap-2 text-white/80 hover:bg-white/10" disabled>
+                <Share2 className="h-4 w-4" />
+                Share (coming soon)
+              </Button>
+            </div>
+          </div>
+          <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-[420px]">
+            <StatCard label="Cards in deck" value={cards.length} />
+            <StatCard label="Unique tags" value={uniqueTags.length} />
+            <StatCard label="Insights captured" value={totalInsights} />
+            <StatCard
+              label="Last added"
+              value={
+                cards[0]?.createdAt
+                  ? new Date(cards[0].createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                  : "—"
+              }
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-8 lg:grid-cols-[1fr,320px]">
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-slate-200/70 bg-white/70 p-6 shadow-xl backdrop-blur">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <Tabs value={showFace} onValueChange={(value) => setShowFace(value as "front" | "back")}>
+                <TabsList>
+                  <TabsTrigger value="front">Front view</TabsTrigger>
+                  <TabsTrigger value="back">Back view</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <Select value={selectedDeckId} onValueChange={setSelectedDeckId}>
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue placeholder="Select a deck" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {decks.map((deck) => (
+                    <SelectItem key={deck.id} value={deck.id}>
+                      {deck.name} ({deck.flashcards.length})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <ControlColumn label="Card theme">
+                <div className="flex flex-wrap gap-2">
+                  {cardThemes.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      title={option.label}
+                      onClick={() => setTheme(option.id)}
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full border transition-all",
+                        theme === option.id ? "border-primary ring-2 ring-primary/40" : "border-slate-200",
+                      )}
+                    >
+                      <span className={cn("h-7 w-7 rounded-full border border-white/10", option.swatch)} />
+                    </button>
+                  ))}
+                </div>
+              </ControlColumn>
+
+              <ControlColumn label="Card size">
+                <div className="flex flex-wrap gap-2">
+                  {cardSizes.map((entry) => (
+                    <Button
+                      key={entry.id}
+                      variant={cardSize === entry.id ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-full px-3"
+                      onClick={() => setCardSize(entry.id as typeof cardSize)}
+                    >
+                      {entry.label}
+                    </Button>
+                  ))}
+                </div>
+              </ControlColumn>
+
+              <ControlColumn label="Typeface">
+                <div className="flex flex-wrap gap-2">
+                  {fonts.map((entry) => (
+                    <Button
+                      key={entry.id}
+                      variant={fontFamily === entry.id ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-full px-3 capitalize"
+                      onClick={() => setFontFamily(entry.id as typeof fontFamily)}
+                    >
+                      {entry.label}
+                    </Button>
+                  ))}
+                </div>
+              </ControlColumn>
+
+              <ControlColumn label="Layout mode">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={layoutMode === "grid" ? "default" : "outline"}
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => setLayoutMode("grid")}
+                  >
+                    <Rows3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={layoutMode === "stack" ? "default" : "outline"}
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => setLayoutMode("stack")}
+                  >
+                    <Rows2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={layoutMode === "storyboard" ? "default" : "outline"}
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => setLayoutMode("storyboard")}
+                  >
+                    <Rows className="h-4 w-4" />
+                  </Button>
+                </div>
+              </ControlColumn>
+
+              <ControlColumn label="Canvas mood" className="md:col-span-2 xl:col-span-4">
+                <Select value={boardBackground} onValueChange={setBoardBackground}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Canvas" />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {boardBackgrounds.map((entry) => (
+                      <SelectItem key={entry.id} value={entry.id}>
+                        {entry.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlColumn>
+            </div>
+          </div>
+
+          <div
+            className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"
+            onClick={() => setFocusCard(null)}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.18)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.18)_1px,transparent_1px)] bg-[size:28px_28px]" />
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 opacity-50 mix-blend-multiply",
+                boardBackgrounds.find((entry) => entry.id === boardBackground)?.className ?? "bg-slate-50",
+              )}
+            />
+            <div className="relative p-8">
+              {cards.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300/70 bg-slate-50/70 p-10 text-center text-sm text-slate-500">
+                  No flashcards available for this deck yet.
+                </div>
+              ) : isMounted ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                  <SortableContext items={cards.map((card) => card.id)} strategy={rectSortingStrategy}>
+                    <div className={cn(layoutClasses[layoutMode], "gap-6")}>
+                      {cards.map((card) => (
+                        <SortableFlashcard
+                          key={card.id}
+                          card={card}
+                          showBack={showFace === "back"}
+                          cardTheme={theme}
+                          cardSize={cardSize}
+                          fontFamily={fontFamily}
+                          isSelected={focusCard?.id === card.id}
+                          onSelect={setFocusCard}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className={cn(layoutClasses[layoutMode], "gap-6")}>
                   {cards.map((card) => (
-                    <SortableFlashcard
+                    <FlashcardCard
                       key={card.id}
                       card={card}
                       showBack={showFace === "back"}
-                      cardTheme={theme}
-                      cardSize={cardSize}
-                      fontFamily={fontFamily}
+                      theme={theme as any}
+                      size={cardSize}
+                      font={fontFamily}
                       isSelected={focusCard?.id === card.id}
-                      onSelect={setFocusCard}
                     />
                   ))}
                 </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className={cn(layoutClasses[layoutMode])}>
-              {cards.map((card) => (
-                <FlashcardCard
-                  key={card.id}
-                  card={card}
-                  showBack={showFace === "back"}
-                  theme={theme as any}
-                  size={cardSize}
-                  font={fontFamily}
-                  isSelected={focusCard?.id === card.id}
-                />
-              ))}
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        <Card className="hidden h-full flex-col overflow-hidden lg:flex">
-          <div className="border-b px-5 py-4">
+        <div className="hidden h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-xl backdrop-blur lg:flex">
+          <div className="border-b border-slate-200 px-6 py-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold leading-tight">Card inspector</h3>
-                <p className="text-xs text-muted-foreground">
-                  {focusCard ? "Fine-tune individual card details." : "Select a card to inspect and edit."}
+                <h3 className="text-sm font-semibold leading-tight text-slate-900">Card inspector</h3>
+                <p className="text-xs text-slate-500">
+                  {focusCard ? "Fine-tune individual card details." : "Select any card to inspect and edit."}
                 </p>
               </div>
               {focusCard && (
-                <Button size="icon" variant="ghost">
+                <Button size="icon" variant="ghost" className="text-slate-500 hover:text-slate-900">
                   <Maximize2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
           </div>
-          <ScrollArea className="flex-1 px-5 py-4">
+          <ScrollArea className="flex-1 px-6 py-5">
             {focusCard ? (
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="text-xs uppercase text-muted-foreground">Question</div>
-                  <p className="mt-1 leading-relaxed">{focusCard.question}</p>
+              <div className="space-y-6 text-sm text-slate-700">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Question</p>
+                  <p className="rounded-xl bg-slate-100/80 p-3 leading-relaxed shadow-inner">{focusCard.question}</p>
                 </div>
-                <div>
-                  <div className="text-xs uppercase text-muted-foreground">Answer</div>
-                  <p className="mt-1 leading-relaxed">{focusCard.answer}</p>
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Answer</p>
+                  <p className="rounded-xl bg-emerald-50/80 p-3 leading-relaxed text-emerald-900 shadow-inner">
+                    {focusCard.answer || "—"}
+                  </p>
                 </div>
                 {focusCard.keyPoints.length > 0 && (
-                  <div>
-                    <div className="text-xs uppercase text-muted-foreground">Key points</div>
-                    <ul className="mt-1 space-y-1 text-sm">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Key points</p>
+                    <ul className="space-y-1 rounded-xl bg-slate-100/70 p-3 shadow-inner">
                       {focusCard.keyPoints.map((point, index) => (
-                        <li key={index} className="flex gap-2">
+                        <li key={index} className="flex gap-2 text-slate-600">
                           <span>•</span>
                           <span>{point}</span>
                         </li>
@@ -460,11 +560,11 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
                   </div>
                 )}
                 {focusCard.followUpPrompts.length > 0 && (
-                  <div>
-                    <div className="text-xs uppercase text-muted-foreground">Reflection prompts</div>
-                    <ul className="mt-1 space-y-1 text-sm">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Reflection prompts</p>
+                    <ul className="space-y-1 rounded-xl bg-slate-100/70 p-3 shadow-inner">
                       {focusCard.followUpPrompts.map((prompt, index) => (
-                        <li key={index} className="flex gap-2">
+                        <li key={index} className="flex gap-2 text-slate-600">
                           <span>?</span>
                           <span>{prompt}</span>
                         </li>
@@ -473,21 +573,23 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">{focusCard.difficulty}</Badge>
+                  <Badge variant="secondary" className="rounded-full bg-slate-900 text-white">
+                    {focusCard.difficulty}
+                  </Badge>
                   {focusCard.tags.map((tag) => (
-                    <Badge key={tag} variant="outline">
+                    <Badge key={tag} variant="outline" className="rounded-full">
                       {tag}
                     </Badge>
                   ))}
                 </div>
                 {focusCard.source?.url && (
-                  <div>
-                    <div className="text-xs uppercase text-muted-foreground">Source</div>
+                  <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Source</p>
                     <a
                       href={focusCard.source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-1 block text-primary underline"
+                      className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline"
                     >
                       {focusCard.source.title ?? focusCard.source.url}
                     </a>
@@ -495,28 +597,24 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
                 )}
               </div>
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                Select a card to see its content and theme details.
+              <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                Select a card on the canvas to inspect its details.
               </div>
             )}
           </ScrollArea>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="w-full" disabled={!selectedDeck || selectedDeck.flashcards.length === 0}>
-            Start Study Session
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-hidden p-0">
+      <Dialog open={isStudyOpen} onOpenChange={setIsStudyOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl">
           <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Start Study Session</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-slate-900">Study session</DialogTitle>
           </DialogHeader>
           <div className="max-h-[75vh] overflow-y-auto px-6 pb-6">
             <StudySession
-              deckName={selectedDeck?.name ?? "Selected deck"}
+              deckName={deckName}
               flashcards={selectedDeck?.flashcards ?? []}
+              onExit={() => setIsStudyOpen(false)}
             />
           </div>
         </DialogContent>
@@ -524,4 +622,3 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
     </div>
   )
 }
-
