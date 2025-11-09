@@ -34,8 +34,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { StudySession } from "./study-session"
+import Link from "next/link"
 
 const cardThemes = [
   { id: "default", label: "Classic", swatch: "bg-white" },
@@ -190,6 +192,11 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
   const [focusCard, setFocusCard] = useState<Flashcard | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [isStudyOpen, setIsStudyOpen] = useState(false)
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareError, setShareError] = useState<string | null>(null)
+  const [isGeneratingShareLink, setIsGeneratingShareLink] = useState(false)
+  const [hasCopiedShareUrl, setHasCopiedShareUrl] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -266,6 +273,69 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
     }
   }
 
+  async function handleShareDeck() {
+    const deck = selectedDeck
+    if (!deck) return
+    if (deck.flashcards.length === 0) {
+      setShareError("This deck is empty. Add some insights before sharing.")
+      setShareUrl(null)
+      setIsShareDialogOpen(true)
+      return
+    }
+
+    setIsGeneratingShareLink(true)
+    setShareError(null)
+    setHasCopiedShareUrl(false)
+
+    try {
+      const res = await fetch("/api/flashcards/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deckId: deck.id }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        throw new Error(error?.error ?? "Failed to create share link")
+      }
+
+      const data = (await res.json()) as { url?: string }
+      if (!data.url) {
+        throw new Error("Share link missing from response")
+      }
+
+      setShareUrl(data.url)
+      setIsShareDialogOpen(true)
+    } catch (error) {
+      console.error("[flashcards-share] generate link error", error)
+      setShareError(error instanceof Error ? error.message : "Failed to create share link")
+      setShareUrl(null)
+      setIsShareDialogOpen(true)
+    } finally {
+      setIsGeneratingShareLink(false)
+    }
+  }
+
+  async function handleCopyShareUrl() {
+    if (!shareUrl) return
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setHasCopiedShareUrl(true)
+    } catch (error) {
+      console.error("[flashcards-share] clipboard error", error)
+      setHasCopiedShareUrl(false)
+    }
+  }
+
+  function handleShareDialogChange(open: boolean) {
+    setIsShareDialogOpen(open)
+    if (!open) {
+      setShareError(null)
+      setShareUrl(null)
+      setHasCopiedShareUrl(false)
+    }
+  }
+
   const deckName = selectedDeck?.name ?? "All insights"
   const deckDescription =
     selectedDeck?.description ??
@@ -315,9 +385,14 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
                   <DropdownMenuItem onClick={() => handleExport("notion")}>Notion CSV</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="ghost" className="gap-2 text-white/80 hover:bg-white/10" disabled>
-                <Share2 className="h-4 w-4" />
-                Share (coming soon)
+              <Button
+                variant="ghost"
+                className="gap-2 text-white/80 hover:bg-white/10"
+                onClick={handleShareDeck}
+                disabled={isGeneratingShareLink || !selectedDeck || selectedDeck.flashcards.length === 0}
+              >
+                {isGeneratingShareLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+                Share deck
               </Button>
             </div>
           </div>
@@ -604,6 +679,46 @@ export function FlashcardWorkspace({ decks, totalInsights }: FlashcardWorkspaceP
           </ScrollArea>
         </div>
       </section>
+
+      <Dialog open={isShareDialogOpen} onOpenChange={handleShareDialogChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Share this deck</DialogTitle>
+            <DialogDescription>
+              Anyone with the link can browse a read-only version. Links automatically expire after seven days.
+            </DialogDescription>
+          </DialogHeader>
+
+          {shareError ? (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+              {shareError}
+            </div>
+          ) : shareUrl ? (
+            <div className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Share link</label>
+              <div className="flex items-center gap-2">
+                <Input value={shareUrl} readOnly className="font-mono text-xs" />
+                <Button onClick={handleCopyShareUrl} variant="secondary" className="shrink-0">
+                  {hasCopiedShareUrl ? "Copied" : "Copy"}
+                </Button>
+                <Button asChild variant="outline" className="shrink-0">
+                  <Link href={shareUrl} target="_blank" rel="noopener noreferrer">
+                    Preview
+                  </Link>
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500">
+                Tip: send this link to collaborators. They can preview cards without affecting your workspace.
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-3 rounded-lg border border-slate-200/60 bg-slate-100/40 p-6 text-sm text-slate-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating secure share link…
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isStudyOpen} onOpenChange={setIsStudyOpen}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl">
