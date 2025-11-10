@@ -27,5 +27,20 @@ export default async function SharePage({ params }: SharePageProps) {
     notFound()
   }
 
-  return <ShareDeckClient deck={deck} />
+  const cardIds = Array.isArray(payload.cardIds) ? payload.cardIds : []
+  const shareDeck =
+    cardIds.length > 0
+      ? {
+          ...deck,
+          flashcards: cardIds
+            .map((id) => deck.flashcards.find((card) => card.id === id))
+            .filter((card): card is (typeof deck.flashcards)[number] => Boolean(card)),
+        }
+      : deck
+
+  if (shareDeck.flashcards.length === 0) {
+    notFound()
+  }
+
+  return <ShareDeckClient deck={shareDeck} />
 }

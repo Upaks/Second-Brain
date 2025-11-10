@@ -12,6 +12,7 @@ import { formatDistanceToNow, format } from "date-fns"
 import type { Insight, Tag, InsightTag, IngestItem, InsightLink, Reminder } from "@prisma/client"
 import { TagManager } from "./tag-manager"
 import { ReminderDialog } from "./reminder-dialog"
+import type { SearchResult } from "@/lib/search"
 
 interface InsightWithRelations extends Insight {
   tags: (InsightTag & { tag: Tag })[]
@@ -32,13 +33,7 @@ interface InsightWithRelations extends Insight {
 interface InsightDetailProps {
   insight: InsightWithRelations
   userId: string
-  relatedInsights?: Array<
-    Insight & {
-      tags: (InsightTag & { tag: Tag })[]
-      ingestItem: IngestItem | null
-      similarity?: number | null
-    }
-  >
+  relatedInsights?: SearchResult[]
 }
 
 type EditingReminder = { id: string; dueAt: string; note: string | null } | null

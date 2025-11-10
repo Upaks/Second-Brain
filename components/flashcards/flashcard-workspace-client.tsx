@@ -4,10 +4,10 @@ import { FlashcardWorkspace, type FlashcardDeck } from "./flashcard-workspace"
 
 interface FlashcardWorkspaceClientProps {
   decks: FlashcardDeck[]
-  totalInsights: number
+  totalCards: number
 }
 
-export function FlashcardWorkspaceClient({ decks, totalInsights }: FlashcardWorkspaceClientProps) {
-  return <FlashcardWorkspace decks={decks} totalInsights={totalInsights} />
+export function FlashcardWorkspaceClient({ decks, totalCards }: FlashcardWorkspaceClientProps) {
+  return <FlashcardWorkspace decks={decks} totalCards={totalCards} />
 }
 

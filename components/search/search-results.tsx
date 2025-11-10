@@ -3,17 +3,10 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, Bell } from "lucide-react"
 import Link from "next/link"
 import { format, formatDistanceToNow } from "date-fns"
-import type { Insight, Tag, InsightTag, IngestItem, Reminder } from "@prisma/client"
-
-interface InsightWithTags extends Insight {
-  tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  similarity?: number | null
-  reminders: Reminder[]
-}
+import type { SearchResult } from "@/lib/search"
 
 interface SearchResultsProps {
-  results: InsightWithTags[]
+  results: SearchResult[]
   query: string
 }
 

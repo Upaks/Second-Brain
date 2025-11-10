@@ -3,6 +3,7 @@ import jwt, { type SignOptions } from "jsonwebtoken"
 interface ShareTokenPayload {
   deckId: string
   userId: string
+  cardIds?: string[]
   exp?: number
   iat?: number
 }
@@ -18,16 +19,18 @@ function getShareSecret(): string {
 export function createShareToken({
   deckId,
   userId,
+  cardIds,
   expiresIn = "7d",
 }: {
   deckId: string
   userId: string
+  cardIds?: string[]
   expiresIn?: string | number
 }): string {
   const options: SignOptions = {
     expiresIn: expiresIn as SignOptions["expiresIn"],
   }
-  return jwt.sign({ deckId, userId }, getShareSecret(), options)
+  return jwt.sign({ deckId, userId, cardIds }, getShareSecret(), options)
 }
 
 export function verifyShareToken(token: string | null | undefined): ShareTokenPayload | null {

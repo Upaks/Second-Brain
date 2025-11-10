@@ -79,6 +79,8 @@ function FlashcardCardComponent({
   const palette = themes[theme] ?? themes.default
   const sizeTokens = cardSizes[size] ?? cardSizes.md
   const fontFamily = fontFamilies[font] ?? fontFamilies.sans
+  const typeLabel =
+    card.cardType === "core" ? "Core insight" : card.cardType === "detail" ? "Deep dive" : "Tag lens"
 
   return (
     <div
@@ -100,6 +102,15 @@ function FlashcardCardComponent({
         <div className="flex items-center justify-between text-[11px] uppercase tracking-wide">
           <span className="inline-flex items-center gap-2 text-xs font-medium opacity-80">
             {showBack ? "Answer" : "Prompt"}
+            <Badge
+              variant="secondary"
+              className={cn(
+                "rounded-full border border-transparent px-2 py-0.5 text-[10px] uppercase tracking-wide",
+                palette.chip,
+              )}
+            >
+              {typeLabel}
+            </Badge>
           </span>
           <Badge variant="outline" className="rounded-full bg-black/5 px-3 py-1 text-[10px] uppercase">
             {card.difficulty}

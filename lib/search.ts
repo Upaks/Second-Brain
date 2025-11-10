@@ -6,7 +6,17 @@ import { generateEmbedding } from "./ai/embed"
 const DEFAULT_SEARCH_LIMIT = Number(process.env.SEARCH_LIMIT ?? "20")
 const DEFAULT_RELATED_LIMIT = Number(process.env.RELATED_LIMIT ?? "6")
 
-type InsightRecord = Awaited<ReturnType<typeof fetchInsightsByIds>>[number]
+type InsightSearchRecord = Prisma.InsightGetPayload<{
+  include: {
+    tags: {
+      include: {
+        tag: true
+      }
+    }
+    ingestItem: true
+    reminders: true
+  }
+}>
 
 function toVectorLiteral(values: number[]) {
   const sanitized = values.map((value) => (Number.isFinite(value) ? Number(value) : 0))
@@ -57,8 +67,8 @@ async function vectorSearch(userId: string, embedding: number[], limit: number, 
   return rows.map((row) => ({ id: row.id, similarity: distanceToSimilarity(row.distance) }))
 }
 
-async function fetchInsightsByIds(ids: string[]) {
-  if (ids.length === 0) return [] as Array<Awaited<ReturnType<typeof prisma.insight.findMany>>[number]>
+async function fetchInsightsByIds(ids: string[]): Promise<InsightSearchRecord[]> {
+  if (ids.length === 0) return []
 
   const insights = await prisma.insight.findMany({
     where: {
@@ -72,22 +82,18 @@ async function fetchInsightsByIds(ids: string[]) {
       },
       ingestItem: true,
       reminders: {
-        where: {
-          sentAt: null,
-        },
-        orderBy: {
-          dueAt: "asc",
-        },
+        where: { sentAt: null },
+        orderBy: { dueAt: "asc" },
         take: 1,
       },
     },
   })
 
   const map = new Map(insights.map((insight) => [insight.id, insight]))
-  return ids.map((id) => map.get(id)).filter(Boolean) as Array<Awaited<ReturnType<typeof prisma.insight.findMany>>[number]>
+  return ids.map((id) => map.get(id)).filter(Boolean) as InsightSearchRecord[]
 }
 
-export type SearchResult = InsightRecord & { similarity?: number | null }
+export type SearchResult = InsightSearchRecord & { similarity?: number | null }
 
 export async function searchInsights(userId: string, query: string, limit = DEFAULT_SEARCH_LIMIT): Promise<SearchResult[]> {
   const trimmed = query.trim()

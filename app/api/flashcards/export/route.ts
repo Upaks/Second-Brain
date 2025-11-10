@@ -12,7 +12,7 @@ import { generateFlashcardsPdf } from "@/lib/flashcards-pdf"
 
 import type { FlashcardDeckData } from "@/lib/flashcards-server"
 
-function reorderFlashcards(flashcards: FlashcardDeckData["flashcards"], order?: unknown) {
+function reorderFlashcards(flashcards: FlashcardDeckData["flashcards"], order?: unknown, strict = false) {
   if (!Array.isArray(order) || order.length === 0) return flashcards
   const map = new Map(flashcards.map((card) => [card.id, card]))
   const seen = new Set<string>()
@@ -28,11 +28,13 @@ function reorderFlashcards(flashcards: FlashcardDeckData["flashcards"], order?: 
     })
     .filter(Boolean) as typeof flashcards
 
-  flashcards.forEach((card) => {
-    if (!seen.has(card.id)) {
-      reordered.push(card)
-    }
-  })
+  if (!strict) {
+    flashcards.forEach((card) => {
+      if (!seen.has(card.id)) {
+        reordered.push(card)
+      }
+    })
+  }
 
   return reordered
 }
@@ -51,18 +53,30 @@ async function handleExport({
   deckId,
   format,
   order,
+  acceptedIds,
 }: {
   userId: string
   deckId: string
   format: string
   order?: unknown
+  acceptedIds?: unknown
 }) {
   const deck = await getDeckById(userId, deckId)
   if (!deck) {
     return NextResponse.json({ error: "Deck not found" }, { status: 404 })
   }
 
-  const flashcards = reorderFlashcards(deck.flashcards, order)
+  let flashcards = deck.flashcards
+
+  if (Array.isArray(acceptedIds) && acceptedIds.length > 0) {
+    const acceptedSet = new Set<string>()
+    acceptedIds.forEach((id) => {
+      if (typeof id === "string") acceptedSet.add(id)
+    })
+    flashcards = flashcards.filter((card) => acceptedSet.has(card.id))
+  }
+
+  flashcards = reorderFlashcards(flashcards, order, Array.isArray(acceptedIds) && acceptedIds.length > 0)
   const safeName = deck.name.replace(/\s+/g, "-").toLowerCase()
 
   if (format === "csv") {
@@ -158,8 +172,9 @@ export async function POST(request: NextRequest) {
     const deckId = typeof body.deckId === "string" ? body.deckId : "all"
     const format = typeof body.format === "string" ? body.format.toLowerCase() : "json"
     const order = body.order
+    const acceptedIds = body.acceptedIds
 
-    return await handleExport({ userId: user.id, deckId, format, order })
+    return await handleExport({ userId: user.id, deckId, format, order, acceptedIds })
   } catch (error) {
     console.error("[flashcards] export error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

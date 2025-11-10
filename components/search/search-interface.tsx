@@ -9,13 +9,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { Empty, EmptyIcon, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { SearchResults } from "./search-results"
 import { Search, Sparkles } from "lucide-react"
-import type { Insight, Tag, InsightTag, IngestItem } from "@prisma/client"
-
-interface InsightWithTags extends Insight {
-  tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  similarity?: number | null
-}
+import type { SearchResult } from "@/lib/search"
 
 interface SearchInterfaceProps {
   userId: string
@@ -23,7 +17,7 @@ interface SearchInterfaceProps {
 
 export function SearchInterface({ userId }: SearchInterfaceProps) {
   const [query, setQuery] = useState("")
-  const [results, setResults] = useState<InsightWithTags[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
