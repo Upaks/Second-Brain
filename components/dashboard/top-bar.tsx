@@ -12,14 +12,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, UserIcon } from "lucide-react"
+import { LogOut, Menu, UserIcon } from "lucide-react"
 import type { User } from "@prisma/client"
 
 interface TopBarProps {
   user: User
+  onToggleSidebar?: () => void
 }
 
-export function TopBar({ user }: TopBarProps) {
+export function TopBar({ user, onToggleSidebar }: TopBarProps) {
   const router = useRouter()
 
   async function handleLogout() {
@@ -37,7 +38,19 @@ export function TopBar({ user }: TopBarProps) {
 
   return (
     <header className="border-b bg-card">
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between max-w-7xl">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onToggleSidebar}
+            aria-label="Toggle navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+
         <div className="flex-1" />
 
         <DropdownMenu>

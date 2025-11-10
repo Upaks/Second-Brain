@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react"
 import {
   DndContext,
   PointerSensor,
@@ -21,7 +21,7 @@ import { Flashcard, type FlashcardCardType, type FlashcardDifficulty } from "@/l
 import { FlashcardCard } from "./flashcard-card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import {
   ChevronLeft,
@@ -29,7 +29,6 @@ import {
   Download,
   Inbox,
   Loader2,
-  Maximize2,
   RotateCcw,
   Rows2,
   Rows3,
@@ -95,19 +94,15 @@ const fonts = [
   { id: "mono", label: "Mono" },
 ] as const
 
-const heroGradients = [
-  "bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.25),_transparent_55%)]",
-  "bg-[radial-gradient(circle_at_top_right,_rgba(236,72,153,0.35),_transparent_50%)]",
-  "bg-[radial-gradient(circle_at_bottom_left,_rgba(14,165,233,0.25),_transparent_50%)]",
-] as const
-
 type LayoutMode = "grid" | "stack" | "storyboard"
 
 const layoutClasses: Record<LayoutMode, string> = {
-  grid: "grid gap-6 sm:grid-cols-2 xl:grid-cols-3",
-  stack: "flex flex-col gap-4",
-  storyboard: "grid auto-rows-[minmax(220px,auto)] gap-6 md:grid-cols-3",
+  grid: "grid auto-rows-max gap-8",
+  stack: "flex flex-col gap-6",
+  storyboard: "grid auto-rows-[minmax(240px,auto)] gap-8",
 }
+
+const ZOOM_LEVELS = [60, 80, 100, 120, 150] as const
 
 export interface FlashcardDeck {
   id: string
@@ -169,20 +164,11 @@ function SortableFlashcard({
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-inner backdrop-blur">
-      <p className="text-xs font-semibold uppercase tracking-wide text-white/70">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-    </div>
-  )
-}
-
 function ControlColumn({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm", className)}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <div className="mt-3 space-y-3">{children}</div>
+    <div className={cn("rounded-xl border border-slate-800 bg-slate-900/80 p-4", className)}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <div className="mt-3 space-y-3 text-slate-200">{children}</div>
     </div>
   )
 }
@@ -240,6 +226,11 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
     followUps: string
   } | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [zoomIndex, setZoomIndex] = useState(() => {
+    const defaultIndex = ZOOM_LEVELS.findIndex((value) => value === 100)
+    return defaultIndex >= 0 ? defaultIndex : 2
+  })
+  const [rightPanelTab, setRightPanelTab] = useState<"deck" | "style" | "edit">("deck")
 
   useEffect(() => {
     setIsMounted(true)
@@ -345,34 +336,30 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
   const canGoPrev = currentPage > 1 && filteredCount > 0
   const canGoNext = currentPage < totalPages && filteredCount > 0
 
-  useEffect(() => {
-    if (!isReviewDialogOpen) {
-      setActiveReviewCardId(null)
-      return
-    }
-    setActiveReviewCardId(pendingCards[0]?.id ?? null)
-  }, [isReviewDialogOpen, pendingCards])
-
-  const activeReviewCard = useMemo(
-    () => pendingCards.find((card) => card.id === activeReviewCardId) ?? null,
-    [pendingCards, activeReviewCardId],
-  )
-
-  const activeReviewIndex = useMemo(
-    () => (activeReviewCardId ? pendingCards.findIndex((card) => card.id === activeReviewCardId) : -1),
-    [pendingCards, activeReviewCardId],
-  )
-
-  const activeReviewDraft = activeReviewCard
-    ? pendingDrafts[activeReviewCard.id] ?? { question: activeReviewCard.question, answer: activeReviewCard.answer }
-    : null
-
-  useEffect(() => {
-    setReviewShowFace("front")
-  }, [activeReviewCardId])
-
   const acceptedCount = cards.length
   const pendingCount = pendingCards.length
+  const zoom = ZOOM_LEVELS[zoomIndex] ?? 100
+  const boardScale = zoom / 100
+  const boardTransformStyle = useMemo<CSSProperties>(() => {
+    const widthPercent = boardScale === 0 ? 100 : 100 / boardScale
+    return {
+      transform: `scale(${boardScale})`,
+      transformOrigin: "0% 0%",
+      width: `${widthPercent}%`,
+    }
+  }, [boardScale])
+  const baseColumnWidth = useMemo(() => {
+    const sizeBase = cardSize === "sm" ? 280 : cardSize === "lg" ? 360 : 320
+    if (layoutMode === "storyboard") {
+      return sizeBase + 40
+    }
+    return sizeBase
+  }, [cardSize, layoutMode])
+  const lastAdded = useMemo(() => {
+    const timestamp = cards[0]?.createdAt
+    if (!timestamp) return "—"
+    return new Date(timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+  }, [cards])
 
   useEffect(() => {
     if (!focusCard) {
@@ -500,6 +487,14 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
     setSearchTerm("")
   }, [])
 
+  const handleZoomOutControl = useCallback(() => {
+    setZoomIndex((prev) => Math.max(0, prev - 1))
+  }, [])
+
+  const handleZoomInControl = useCallback(() => {
+    setZoomIndex((prev) => Math.min(ZOOM_LEVELS.length - 1, prev + 1))
+  }, [])
+
   const updateInspectorDraft = useCallback((field: keyof NonNullable<typeof inspectorDraft>, value: string) => {
     setInspectorDraft((prev) => (prev ? { ...prev, [field]: value } : prev))
   }, [])
@@ -577,6 +572,20 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
     [pendingCards],
   )
 
+  const activeReviewCard = useMemo(
+    () => pendingCards.find((card) => card.id === activeReviewCardId) ?? null,
+    [pendingCards, activeReviewCardId],
+  )
+
+  const activeReviewIndex = useMemo(
+    () => (activeReviewCardId ? pendingCards.findIndex((card) => card.id === activeReviewCardId) : -1),
+    [pendingCards, activeReviewCardId],
+  )
+
+  const activeReviewDraft = activeReviewCard
+    ? pendingDrafts[activeReviewCard.id] ?? { question: activeReviewCard.question, answer: activeReviewCard.answer }
+    : null
+
   const goToReviewPrev = useCallback(() => {
     if (activeReviewIndex <= 0) return
     goToReviewCard(activeReviewIndex - 1)
@@ -602,6 +611,17 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
 
   const canReviewPrev = activeReviewIndex > 0
   const canReviewNext = activeReviewIndex >= 0 && activeReviewIndex < pendingCards.length - 1
+
+  useEffect(() => {
+    if (!isReviewDialogOpen) {
+      setActiveReviewCardId(null)
+      return
+    }
+    setActiveReviewCardId((current) => {
+      if (current && pendingCards.some((card) => card.id === current)) return current
+      return pendingCards[0]?.id ?? null
+    })
+  }, [isReviewDialogOpen, pendingCards])
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -735,471 +755,540 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
     "Arrange, remix, and reinforce the ideas that matter without losing the context that made them meaningful."
 
   return (
-    <div className="space-y-12">
-      <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-8 text-slate-100 shadow-[0_30px_60px_-20px_rgba(15,23,42,0.65)]">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/30 via-slate-900/40 to-slate-950/80" />
-        {heroGradients.map((gradient, idx) => (
-          <div key={idx} className={cn("pointer-events-none absolute inset-0 mix-blend-screen", gradient)} />
-        ))}
-        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-5">
-            <Badge variant="secondary" className="bg-white/10 text-white/80">
-              Deck overview
-            </Badge>
-            <div className="space-y-4">
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{deckName}</h1>
-              <p className="max-w-xl text-sm text-slate-200/80">{deckDescription}</p>
+    <>
+      <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden border border-slate-900 bg-slate-950 text-slate-100 shadow-2xl">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-900 bg-slate-950 px-6 py-4">
+          <div className="flex flex-wrap items-center gap-6">
+            <div>
+              <h1 className="text-lg font-semibold text-white">{deckName}</h1>
+              <p className="text-xs text-slate-400">
+                {acceptedCount} accepted • {pendingCount} pending • {totalCards} generated
+              </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="hidden items-center gap-2 text-xs text-slate-400 md:flex">
+              <span className="uppercase tracking-wide">Zoom</span>
               <Button
-                className="gap-2 bg-indigo-500 text-white hover:bg-indigo-400"
-                onClick={() => setIsReviewDialogOpen(true)}
-                disabled={pendingCards.length === 0}
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+                onClick={handleZoomOutControl}
+                disabled={zoomIndex === 0}
               >
-                <Inbox className="h-4 w-4" />
-                {pendingCards.length > 0 ? `Review ${pendingCards.length} new cards` : "Review queue empty"}
+                –
               </Button>
-              <Button className="gap-2 bg-white text-slate-900 hover:bg-slate-100" onClick={() => setIsStudyOpen(true)}>
-                <Wand2 className="h-4 w-4" />
-                Launch study session
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="gap-2 border border-white/20 bg-white/10 text-white hover:bg-white/20"
-                    disabled={isExporting}
-                  >
-                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                    Export deck
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60">
-                  <DropdownMenuLabel>Standard exports</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleExport("json")}>JSON (structured)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("csv")}>CSV (spreadsheet)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("pdf")}>PDF (printable)</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Bring it to other tools</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleExport("anki")}>Anki TSV</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("quizlet")}>Quizlet text</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("notion")}>Notion CSV</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <span className="w-12 text-center font-mono text-sm text-slate-200">{zoom}%</span>
               <Button
-                variant="ghost"
-                className="gap-2 text-white/80 hover:bg-white/10"
-                onClick={handleShareDeck}
-                disabled={isGeneratingShareLink || !selectedDeck || cards.length === 0}
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+                onClick={handleZoomInControl}
+                disabled={zoomIndex === ZOOM_LEVELS.length - 1}
               >
-                {isGeneratingShareLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-                Share deck
+                +
               </Button>
             </div>
+            <Tabs
+              value={showFace}
+              onValueChange={(value) => setShowFace(value as "front" | "back")}
+              className="hidden md:block"
+            >
+              <TabsList className="grid grid-cols-2 rounded-xl border border-slate-800 bg-slate-900/80">
+                <TabsTrigger
+                  value="front"
+                  className="px-3 py-1 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+                >
+                  Front
+                </TabsTrigger>
+                <TabsTrigger
+                  value="back"
+                  className="px-3 py-1 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+                >
+                  Back
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-          <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-[420px]">
-            <StatCard label="Accepted cards" value={acceptedCount} />
-            <StatCard label="Awaiting review" value={pendingCount} />
-            <StatCard
-              label={hasActiveFilters ? "Matching cards" : "Deck size"}
-              value={
-                hasActiveFilters
-                  ? `${filteredCount}${filteredCount !== acceptedCount ? ` / ${acceptedCount}` : ""}`
-                  : totalCards
-              }
-            />
-            <StatCard
-              label="Last added"
-              value={
-                cards[0]?.createdAt
-                  ? new Date(cards[0].createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-                  : "—"
-              }
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              className="gap-2 bg-indigo-500 text-white hover:bg-indigo-400"
+              onClick={() => setIsReviewDialogOpen(true)}
+              disabled={pendingCards.length === 0}
+            >
+              <Inbox className="h-4 w-4" />
+              {pendingCards.length > 0 ? `Review ${pendingCards.length} cards` : "Review queue empty"}
+            </Button>
+            <Button className="gap-2 bg-slate-800 text-white hover:bg-slate-700" onClick={() => setIsStudyOpen(true)}>
+              <Wand2 className="h-4 w-4" />
+              Study
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+                  disabled={isExporting}
+                >
+                  {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60 border-slate-800 bg-slate-900 text-slate-100">
+                <DropdownMenuLabel>Standard exports</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleExport("json")}>JSON (structured)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("csv")}>CSV (spreadsheet)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("pdf")}>PDF (printable)</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Bring it to other tools</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleExport("anki")}>Anki TSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("quizlet")}>Quizlet text</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("notion")}>Notion CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="ghost"
+              className="gap-2 text-slate-200 hover:bg-slate-800"
+              onClick={handleShareDeck}
+              disabled={isGeneratingShareLink || !selectedDeck || cards.length === 0}
+            >
+              {isGeneratingShareLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              Share
+            </Button>
           </div>
-        </div>
-      </section>
-      <section className="grid gap-8 lg:grid-cols-[1fr,320px]">
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-slate-200/70 bg-white/70 p-6 shadow-xl backdrop-blur">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <Tabs value={showFace} onValueChange={(value) => setShowFace(value as "front" | "back")}>
-                <TabsList>
-                  <TabsTrigger value="front">Front view</TabsTrigger>
-                  <TabsTrigger value="back">Back view</TabsTrigger>
-                </TabsList>
-              </Tabs>
+        </header>
 
-              <Select value={selectedDeckId} onValueChange={setSelectedDeckId}>
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Select a deck" />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  {decks.map((deck) => (
-                    <SelectItem key={deck.id} value={deck.id}>
-                      {deck.name} ({deck.flashcards.length})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <ControlColumn label="Card theme">
-                <div className="flex flex-wrap gap-2">
-                  {cardThemes.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      title={option.label}
-                      onClick={() => setTheme(option.id)}
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-full border transition-all",
-                        theme === option.id ? "border-primary ring-2 ring-primary/40" : "border-slate-200",
-                      )}
+        <div className="flex flex-1 flex-col overflow-hidden xl:flex-row">
+          <div className="relative flex flex-1 overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(51,65,85,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(51,65,85,0.22)_1px,transparent_1px)] bg-[size:48px_48px]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.22),_transparent_60%)]" />
+            <div className="relative flex-1 overflow-auto px-4 py-8 pb-24 sm:px-6 lg:px-9 xl:px-12">
+              <div className="w-full pb-6">
+                <div className="origin-top-left transition-transform duration-150" style={boardTransformStyle}>
+                  {acceptedCount === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/70 p-10 text-center text-sm text-slate-300">
+                      No flashcards available for this deck yet. Review and approve new cards to populate the workspace.
+                    </div>
+                  ) : filteredCount === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-amber-500/40 bg-amber-950/40 p-10 text-center text-sm text-amber-200">
+                      No cards match the current filters. Adjust your filters to see more of the deck.
+                    </div>
+                  ) : isMounted ? (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                      <SortableContext items={visibleCards.map((card) => card.id)} strategy={rectSortingStrategy}>
+                        <div
+                          className={cn(layoutClasses[layoutMode])}
+                          style=
+                            {layoutMode === "grid" || layoutMode === "storyboard"
+                              ? { gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(baseColumnWidth)}px, 1fr))` }
+                              : undefined}
+                        >
+                          {visibleCards.map((card) => (
+                            <SortableFlashcard
+                              key={card.id}
+                              card={card}
+                              showBack={showFace === "back"}
+                              cardTheme={theme}
+                              cardSize={cardSize}
+                              fontFamily={fontFamily}
+                              isSelected={focusCard?.id === card.id}
+                              onSelect={setFocusCard}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <div
+                      className={cn(layoutClasses[layoutMode])}
+                      style=
+                        {layoutMode === "grid" || layoutMode === "storyboard"
+                          ? { gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(baseColumnWidth)}px, 1fr))` }
+                          : undefined}
                     >
-                      <span className={cn("h-7 w-7 rounded-full border border-white/10", option.swatch)} />
-                    </button>
-                  ))}
-                </div>
-              </ControlColumn>
-
-              <ControlColumn label="Card size">
-                <div className="flex flex-wrap gap-2">
-                  {cardSizes.map((entry) => (
-                    <Button
-                      key={entry.id}
-                      variant={cardSize === entry.id ? "default" : "outline"}
-                      size="sm"
-                      className="rounded-full px-3"
-                      onClick={() => setCardSize(entry.id as typeof cardSize)}
-                    >
-                      {entry.label}
-                    </Button>
-                  ))}
-                </div>
-              </ControlColumn>
-
-              <ControlColumn label="Typeface">
-                <div className="flex flex-wrap gap-2">
-                  {fonts.map((entry) => (
-                    <Button
-                      key={entry.id}
-                      variant={fontFamily === entry.id ? "default" : "outline"}
-                      size="sm"
-                      className="rounded-full px-3 capitalize"
-                      onClick={() => setFontFamily(entry.id as typeof fontFamily)}
-                    >
-                      {entry.label}
-                    </Button>
-                  ))}
-                </div>
-              </ControlColumn>
-
-              <ControlColumn label="Layout mode">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={layoutMode === "grid" ? "default" : "outline"}
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => setLayoutMode("grid")}
-                  >
-                    <Rows3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={layoutMode === "stack" ? "default" : "outline"}
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => setLayoutMode("stack")}
-                  >
-                    <Rows2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={layoutMode === "storyboard" ? "default" : "outline"}
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => setLayoutMode("storyboard")}
-                  >
-                    <Rows className="h-4 w-4" />
-                  </Button>
-                </div>
-              </ControlColumn>
-
-              <ControlColumn label="Canvas mood" className="md:col-span-2 xl:col-span-4">
-                <Select value={boardBackground} onValueChange={setBoardBackground}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Canvas" />
-                  </SelectTrigger>
-                  <SelectContent align="end">
-                    {boardBackgrounds.map((entry) => (
-                      <SelectItem key={entry.id} value={entry.id}>
-                        {entry.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ControlColumn>
-            </div>
-          </div>
-
-        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search cards"
-                className="w-[220px] pl-9"
-              />
-            </div>
-            <Select value={difficultyFilter} onValueChange={(value) => setDifficultyFilter(value as typeof difficultyFilter)}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All difficulties</SelectItem>
-                <SelectItem value="foundation">Foundation</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="challenge">Challenge</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={cardTypeFilter} onValueChange={(value) => setCardTypeFilter(value as typeof cardTypeFilter)}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Card type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="core">Core insights</SelectItem>
-                <SelectItem value="detail">Deep dives</SelectItem>
-                <SelectItem value="tag">Tag lenses</SelectItem>
-              </SelectContent>
-            </Select>
-            {deckTags.length > 0 && (
-              <Select value={tagFilter} onValueChange={(value) => setTagFilter(value as typeof tagFilter)}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Tag filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tags</SelectItem>
-                  {deckTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>
-                      {tag}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {hasActiveFilters && (
-              <Button variant="ghost" className="text-xs" onClick={handleClearFilters}>
-                Clear filters
-              </Button>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            {filteredCount === 0 ? (
-              <span>No cards to display</span>
-            ) : (
-              <span>
-                {startRange}–{endRange} of {filteredCount}
-                {filteredCount !== acceptedCount ? ` (${acceptedCount} total)` : ""}
-              </span>
-            )}
-            <div className="inline-flex overflow-hidden rounded-full border border-slate-200">
-              <Button variant="ghost" size="icon" className="rounded-none" onClick={goToPrevPage} disabled={!canGoPrev}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="px-3 text-xs text-slate-500">
-                {filteredCount === 0 ? 0 : currentPage} / {filteredCount === 0 ? 0 : totalPages}
-              </span>
-              <Button variant="ghost" size="icon" className="rounded-none" onClick={goToNextPage} disabled={!canGoNext}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-          <div
-            className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"
-            onClick={() => setFocusCard(null)}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.18)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.18)_1px,transparent_1px)] bg-[size:28px_28px]" />
-            <div
-              className={cn(
-                "pointer-events-none absolute inset-0 opacity-50 mix-blend-multiply",
-                boardBackgrounds.find((entry) => entry.id === boardBackground)?.className ?? "bg-slate-50",
-              )}
-            />
-            <div className="relative p-8">
-              {acceptedCount === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300/70 bg-slate-50/70 p-10 text-center text-sm text-slate-500">
-                  No flashcards available for this deck yet. Review and approve new cards to populate the workspace.
-                </div>
-              ) : filteredCount === 0 ? (
-                <div className="rounded-2xl border border-dashed border-amber-300/70 bg-amber-50/70 p-10 text-center text-sm text-amber-600">
-                  No cards match the current filters. Adjust your filters to see more of the deck.
-                </div>
-              ) : isMounted ? (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-                  <SortableContext items={visibleCards.map((card) => card.id)} strategy={rectSortingStrategy}>
-                    <div className={cn(layoutClasses[layoutMode], "gap-6")}>
                       {visibleCards.map((card) => (
-                        <SortableFlashcard
+                        <FlashcardCard
                           key={card.id}
                           card={card}
                           showBack={showFace === "back"}
-                          cardTheme={theme}
-                          cardSize={cardSize}
-                          fontFamily={fontFamily}
+                          theme={theme as any}
+                          size={cardSize}
+                          font={fontFamily}
                           isSelected={focusCard?.id === card.id}
-                          onSelect={setFocusCard}
                         />
                       ))}
                     </div>
-                  </SortableContext>
-                </DndContext>
-              ) : (
-                <div className={cn(layoutClasses[layoutMode], "gap-6")}>
-                  {visibleCards.map((card) => (
-                    <FlashcardCard
-                      key={card.id}
-                      card={card}
-                      showBack={showFace === "back"}
-                      theme={theme as any}
-                      size={cardSize}
-                      font={fontFamily}
-                      isSelected={focusCard?.id === card.id}
-                    />
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-xl backdrop-blur lg:flex">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold leading-tight text-slate-900">Card inspector</h3>
-                <p className="text-xs text-slate-500">
-                  {focusCard ? "Fine-tune individual card details." : "Select any card to inspect and edit."}
-                </p>
               </div>
-              {focusCard && (
-                <Button size="icon" variant="ghost" className="text-slate-500 hover:text-slate-900">
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              )}
             </div>
           </div>
-          <ScrollArea className="flex-1 px-6 py-5">
-            {focusCard && inspectorDraft ? (
-              <div className="flex flex-col gap-5 text-sm text-slate-700">
-                <div className="flex flex-wrap gap-2 text-xs uppercase tracking-wide text-slate-500">
-                  <Badge variant="secondary" className="rounded-full bg-slate-900 text-white">
-                    {focusCard.difficulty}
-                  </Badge>
-                  <Badge variant="outline" className="rounded-full">
-                    {focusCard.cardType === "core"
-                      ? "Core insight"
-                      : focusCard.cardType === "detail"
-                        ? "Deep dive"
-                        : "Tag lens"}
-                  </Badge>
-                  {focusCard.tags
-                    .filter((tag) => !tag.startsWith("card:"))
-                    .map((tag) => (
-                      <Badge key={tag} variant="outline" className="rounded-full">
-                        {tag}
-                      </Badge>
-                    ))}
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Prompt</label>
-                  <Textarea
-                    value={inspectorDraft.question}
-                    onChange={(event) => updateInspectorDraft("question", event.target.value)}
-                    className="min-h-[110px] resize-y"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Answer</label>
-                  <Textarea
-                    value={inspectorDraft.answer}
-                    onChange={(event) => updateInspectorDraft("answer", event.target.value)}
-                    className="min-h-[110px] resize-y bg-emerald-50/60 text-emerald-900"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Key points (one per line)
-                  </label>
-                  <Textarea
-                    value={inspectorDraft.keyPoints}
-                    onChange={(event) => updateInspectorDraft("keyPoints", event.target.value)}
-                    className="min-h-[110px] resize-y"
-                    placeholder="Add supporting bullets, one per line."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Reflection prompts (one per line)
-                  </label>
-                  <Textarea
-                    value={inspectorDraft.followUps}
-                    onChange={(event) => updateInspectorDraft("followUps", event.target.value)}
-                    className="min-h-[110px] resize-y"
-                    placeholder="Add follow-up prompts, one per line."
-                  />
-                </div>
+          <Tabs
+            value={rightPanelTab}
+            onValueChange={(value) => setRightPanelTab(value as typeof rightPanelTab)}
+            className="flex w-full flex-shrink-0 flex-col border-t border-slate-900 bg-slate-950/95 xl:h-full xl:w-[340px] xl:border-t-0 xl:border-l"
+          >
+            <div className="px-5 pt-5">
+              <TabsList className="grid w-full grid-cols-3 rounded-xl border border-slate-800 bg-slate-900/80">
+                <TabsTrigger
+                  value="deck"
+                  className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+                >
+                  Deck
+                </TabsTrigger>
+                <TabsTrigger
+                  value="style"
+                  className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+                >
+                  Style
+                </TabsTrigger>
+                <TabsTrigger
+                  value="edit"
+                  className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+                >
+                  Edit
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <ScrollArea className="flex-1 px-5 pb-6 xl:h-full xl:overflow-hidden">
+              <TabsContent value="deck" className="space-y-5 pt-4">
+                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Deck</p>
+                  <Select value={selectedDeckId} onValueChange={setSelectedDeckId}>
+                    <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                      <SelectValue placeholder="Select a deck" />
+                    </SelectTrigger>
+                    <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                      {decks.map((deck) => (
+                        <SelectItem key={deck.id} value={deck.id}>
+                          {deck.name} ({deck.flashcards.length})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500">{deckDescription}</p>
+                </section>
 
-                {focusCard.source?.url && (
-                  <div className="space-y-1 text-xs">
-                    <p className="uppercase tracking-wide text-slate-500">Source</p>
-                    <a
-                      href={focusCard.source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline"
-                    >
-                      {focusCard.source.title ?? focusCard.source.url}
-                    </a>
+                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Stats</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-200">
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Accepted</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">{acceptedCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Pending</p>
+                      <p className="mt-1 text-lg font-semibold text-amber-300">{pendingCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Generated</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">{totalCards}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Last added</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">{lastAdded}</p>
+                    </div>
                   </div>
-                )}
+                </section>
 
-                <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleInspectorSave} disabled={!hasInspectorChanges} className="bg-slate-900 text-white">
-                    Save changes
-                  </Button>
-                  <Button variant="outline" onClick={handleInspectorReset} disabled={!hasInspectorChanges}>
-                    Reset
-                  </Button>
-                  <Button variant="ghost" className="gap-2 text-slate-500 hover:text-slate-900" onClick={handleSendCardBackToReview}>
-                    <RotateCcw className="h-4 w-4" />
-                    Send back to review
-                  </Button>
-                </div>
-                {!hasInspectorChanges && (
-                  <p className="text-xs text-slate-400">
-                    Tip: edits save locally for this deck. Approved cards will use the updated wording in exports and share
-                    links.
+                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Filters</p>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Input
+                      type="search"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search cards"
+                      className="h-10 w-full rounded-lg border border-slate-800 bg-slate-950/70 pl-9 text-slate-100 placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Select value={difficultyFilter} onValueChange={(value) => setDifficultyFilter(value as typeof difficultyFilter)}>
+                      <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                        <SelectValue placeholder="Difficulty" />
+                      </SelectTrigger>
+                      <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                        <SelectItem value="all">All difficulties</SelectItem>
+                        <SelectItem value="foundation">Foundation</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="challenge">Challenge</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={cardTypeFilter} onValueChange={(value) => setCardTypeFilter(value as typeof cardTypeFilter)}>
+                      <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                        <SelectValue placeholder="Card type" />
+                      </SelectTrigger>
+                      <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="core">Core insights</SelectItem>
+                        <SelectItem value="detail">Deep dives</SelectItem>
+                        <SelectItem value="tag">Tag lenses</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {deckTags.length > 0 && (
+                      <Select value={tagFilter} onValueChange={(value) => setTagFilter(value as typeof tagFilter)}>
+                        <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                          <SelectValue placeholder="Tag filter" />
+                        </SelectTrigger>
+                        <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                          <SelectItem value="all">All tags</SelectItem>
+                          {deckTags.map((tag) => (
+                            <SelectItem key={tag} value={tag}>
+                              {tag}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {hasActiveFilters && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-slate-800 text-slate-200 hover:bg-slate-900"
+                      onClick={handleClearFilters}
+                    >
+                      Clear filters
+                    </Button>
+                  )}
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                    Viewing {filteredCount === 0 ? 0 : startRange}–{filteredCount === 0 ? 0 : endRange} of {filteredCount}
                   </p>
-                )}
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                Select a card on the canvas to inspect and edit details.
-              </div>
-            )}
-          </ScrollArea>
+                </section>
+              </TabsContent>
+
+              <TabsContent value="style" className="space-y-4 pt-4">
+                <ControlColumn label="Card theme">
+                  <div className="flex flex-wrap gap-2">
+                    {cardThemes.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        title={option.label}
+                        onClick={() => setTheme(option.id)}
+                        className={cn(
+                          "flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900 transition-all hover:border-slate-500",
+                          theme === option.id && "ring-2 ring-indigo-400",
+                        )}
+                      >
+                        <span className={cn("h-7 w-7 rounded-full border border-white/20", option.swatch)} />
+                      </button>
+                    ))}
+                  </div>
+                </ControlColumn>
+
+                <ControlColumn label="Card size">
+                  <div className="flex flex-wrap gap-2">
+                    {cardSizes.map((entry) => (
+                      <Button
+                        key={entry.id}
+                        variant={cardSize === entry.id ? "default" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
+                          cardSize === entry.id && "bg-indigo-500 text-white hover:bg-indigo-400",
+                        )}
+                        onClick={() => setCardSize(entry.id as typeof cardSize)}
+                      >
+                        {entry.label}
+                      </Button>
+                    ))}
+                  </div>
+                </ControlColumn>
+
+                <ControlColumn label="Typeface">
+                  <div className="flex flex-wrap gap-2">
+                    {fonts.map((entry) => (
+                      <Button
+                        key={entry.id}
+                        variant={fontFamily === entry.id ? "default" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "rounded-full border-slate-700 bg-slate-900 text-slate-200 capitalize hover:bg-slate-800",
+                          fontFamily === entry.id && "bg-indigo-500 text-white hover:bg-indigo-400",
+                        )}
+                        onClick={() => setFontFamily(entry.id as typeof fontFamily)}
+                      >
+                        {entry.label}
+                      </Button>
+                    ))}
+                  </div>
+                </ControlColumn>
+
+                <ControlColumn label="Layout mode">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={layoutMode === "grid" ? "default" : "outline"}
+                      size="icon"
+                      className={cn(
+                        "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
+                        layoutMode === "grid" && "bg-indigo-500 text-white hover:bg-indigo-400",
+                      )}
+                      onClick={() => setLayoutMode("grid")}
+                    >
+                      <Rows3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={layoutMode === "stack" ? "default" : "outline"}
+                      size="icon"
+                      className={cn(
+                        "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
+                        layoutMode === "stack" && "bg-indigo-500 text-white hover:bg-indigo-400",
+                      )}
+                      onClick={() => setLayoutMode("stack")}
+                    >
+                      <Rows2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={layoutMode === "storyboard" ? "default" : "outline"}
+                      size="icon"
+                      className={cn(
+                        "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
+                        layoutMode === "storyboard" && "bg-indigo-500 text-white hover:bg-indigo-400",
+                      )}
+                      onClick={() => setLayoutMode("storyboard")}
+                    >
+                      <Rows className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </ControlColumn>
+
+                <ControlColumn label="Canvas mood">
+                  <Select value={boardBackground} onValueChange={setBoardBackground}>
+                    <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                      <SelectValue placeholder="Canvas" />
+                    </SelectTrigger>
+                    <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                      {boardBackgrounds.map((entry) => (
+                        <SelectItem key={entry.id} value={entry.id}>
+                          {entry.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ControlColumn>
+              </TabsContent>
+
+              <TabsContent value="edit" className="space-y-4 pt-4">
+                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Inspector</p>
+                  {focusCard && inspectorDraft ? (
+                    <div className="space-y-4 text-sm text-slate-200">
+                      <div className="flex flex-wrap gap-2 text-xs uppercase tracking-wide text-slate-400">
+                        <Badge variant="secondary" className="rounded-full bg-slate-900 text-white">
+                          {focusCard.difficulty}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-full border-slate-700 text-slate-200">
+                          {focusCard.cardType === "core"
+                            ? "Core insight"
+                            : focusCard.cardType === "detail"
+                              ? "Deep dive"
+                              : "Tag lens"}
+                        </Badge>
+                        {focusCard.tags
+                          .filter((tag) => !tag.startsWith("card:"))
+                          .map((tag) => (
+                            <Badge key={tag} variant="outline" className="rounded-full border-slate-700 text-slate-200">
+                              {tag}
+                            </Badge>
+                          ))}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Prompt</label>
+                        <Textarea
+                          value={inspectorDraft.question}
+                          onChange={(event) => updateInspectorDraft("question", event.target.value)}
+                          className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Answer</label>
+                        <Textarea
+                          value={inspectorDraft.answer}
+                          onChange={(event) => updateInspectorDraft("answer", event.target.value)}
+                          className="min-h-[110px] resize-y rounded-lg border border-emerald-500/60 bg-emerald-950/50 text-emerald-100 placeholder:text-emerald-300/70 focus:border-emerald-400 focus:ring-emerald-400"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Key points (one per line)
+                        </label>
+                        <Textarea
+                          value={inspectorDraft.keyPoints}
+                          onChange={(event) => updateInspectorDraft("keyPoints", event.target.value)}
+                          className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
+                          placeholder="Add supporting bullets, one per line."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Reflection prompts (one per line)
+                        </label>
+                        <Textarea
+                          value={inspectorDraft.followUps}
+                          onChange={(event) => updateInspectorDraft("followUps", event.target.value)}
+                          className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
+                          placeholder="Add follow-up prompts, one per line."
+                        />
+                      </div>
+
+                      {focusCard.source?.url && (
+                        <div className="space-y-1 text-xs">
+                          <p className="uppercase tracking-wide text-slate-400">Source</p>
+                          <a
+                            href={focusCard.source.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm font-medium text-indigo-300 hover:text-indigo-200"
+                          >
+                            {focusCard.source.title ?? focusCard.source.url}
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          onClick={handleInspectorSave}
+                          disabled={!hasInspectorChanges}
+                          className="bg-indigo-500 text-white hover:bg-indigo-400"
+                        >
+                          Save changes
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleInspectorReset}
+                          disabled={!hasInspectorChanges}
+                          className="border-slate-800 text-slate-200 hover:bg-slate-900"
+                        >
+                          Reset
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="gap-2 text-slate-400 hover:text-slate-200"
+                          onClick={handleSendCardBackToReview}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Send back to review
+                        </Button>
+                      </div>
+                      {!hasInspectorChanges && (
+                        <p className="text-xs text-slate-500">
+                          Tip: edits save locally for this deck. Approved cards will use the updated wording in exports and share links.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">Select a card on the canvas to inspect and edit its details.</p>
+                  )}
+                </section>
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
         </div>
-      </section>
+      </div>
 
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
         <DialogContent className="flex w-[95vw] max-h-[90vh] flex-col overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl sm:max-w-[1100px]">
@@ -1464,6 +1553,6 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }

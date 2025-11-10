@@ -5,6 +5,10 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Brain, Home, Search, Inbox, Lightbulb, Folder, Clock, Layers, Settings } from "lucide-react"
 
+interface SidebarContentProps {
+  onNavigate?: () => void
+}
+
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
   { name: "Search", href: "/dashboard/search", icon: Search },
@@ -15,21 +19,21 @@ const navigation = [
   { name: "Reminders", href: "/dashboard/reminders", icon: Clock },
 ]
 
-export function Sidebar() {
+function SidebarContentInner({ onNavigate }: SidebarContentProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 border-r bg-card flex flex-col">
-      <div className="p-6 border-b">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+    <>
+      <div className="border-b p-6">
+        <Link href="/dashboard" className="group flex items-center gap-3" onClick={onNavigate}>
+          <div className="rounded-xl bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
             <Brain className="h-6 w-6 text-primary" />
           </div>
           <span className="text-xl font-bold">Second Brain</span>
         </Link>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 space-y-1 p-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -38,8 +42,9 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -52,11 +57,12 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t">
+      <div className="border-t p-4">
         <Link
           href="/dashboard/settings"
+          onClick={onNavigate}
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
+            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
             pathname === "/dashboard/settings"
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -66,6 +72,18 @@ export function Sidebar() {
           Settings
         </Link>
       </div>
+    </>
+  )
+}
+
+export function Sidebar({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
+  return (
+    <aside className={cn("flex w-64 flex-col border-r bg-card", className)}>
+      <SidebarContentInner onNavigate={onNavigate} />
     </aside>
   )
+}
+
+export function SidebarContent(props: SidebarContentProps) {
+  return <SidebarContentInner {...props} />
 }
