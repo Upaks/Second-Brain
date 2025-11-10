@@ -76,6 +76,7 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
       try {
         const parsed = JSON.parse(stored) as Partial<StudyGoal>
         if (parsed && (parsed.mode === "cards" || parsed.mode === "minutes") && typeof parsed.amount === "number") {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setGoal({ mode: parsed.mode, amount: Math.max(1, Math.round(parsed.amount)) })
         }
       } catch (error) {
@@ -91,6 +92,7 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
 
   useEffect(() => {
     timerStartRef.current = Date.now()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setElapsedSeconds(0)
     const interval = window.setInterval(() => {
       if (!timerStartRef.current) return
@@ -103,20 +105,6 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
   const totalCards = flashcards.length
   const safeIndex = totalCards > 0 ? Math.min(index, totalCards - 1) : 0
   const card = flashcards[safeIndex]
-
-  if (!card) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-        <h2 className="text-xl font-semibold">No flashcards ready</h2>
-        <p className="text-sm text-muted-foreground">Add insights to this deck before starting a study session.</p>
-        {onExit && (
-          <Button onClick={onExit} size="sm" variant="secondary">
-            Close
-          </Button>
-        )}
-      </div>
-    )
-  }
 
   const aggregatedStats = useMemo(() => {
     const counts: Record<ReviewRating, number> = {
@@ -147,6 +135,20 @@ export function StudySession({ deckName, flashcards, onExit }: StudySessionProps
     : Math.max(goalAmount - elapsedMinutes, 0)
 
   const quickOptions = goal.mode === "cards" ? [5, 10, 15] : [5, 10, 20]
+
+  if (!card) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+        <h2 className="text-xl font-semibold">No flashcards ready</h2>
+        <p className="text-sm text-muted-foreground">Add insights to this deck before starting a study session.</p>
+        {onExit && (
+          <Button onClick={onExit} size="sm" variant="secondary">
+            Close
+          </Button>
+        )}
+      </div>
+    )
+  }
 
   function setGoalMode(mode: GoalMode) {
     setGoal((prev) => ({ mode, amount: mode === prev.mode ? prev.amount : mode === "cards" ? 10 : 10 }))

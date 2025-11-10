@@ -3,16 +3,16 @@ import { InboxItem } from "./inbox-item"
 import { Inbox } from "lucide-react"
 import type { IngestItem, Insight, Tag, InsightTag } from "@prisma/client"
 
-interface IngestItemWithInsight extends IngestItem {
-  insight:
-    | (Insight & {
-        tags: (InsightTag & { tag: Tag })[]
-      })
-    | null
+export type InboxIngestItem = IngestItem & {
+  insights: Array<
+    Insight & {
+      tags: (InsightTag & { tag: Tag })[]
+    }
+  >
 }
 
 interface InboxListProps {
-  items: IngestItemWithInsight[]
+  items: InboxIngestItem[]
 }
 
 export function InboxList({ items }: InboxListProps) {

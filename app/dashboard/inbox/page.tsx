@@ -1,7 +1,22 @@
 import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
-import { InboxList } from "@/components/inbox/inbox-list"
+import { InboxList, type InboxIngestItem } from "@/components/inbox/inbox-list"
 import { prisma } from "@/lib/db"
+import type { InsightTag, Tag } from "@prisma/client"
+
+type InboxInsight = {
+  id: string
+  userId: string
+  title: string
+  summary: string
+  takeaway: string
+  content: string | null
+  ingestItemId: string | null
+  sectionIndex: number | null
+  createdAt: Date
+  updatedAt: Date
+  tags: (InsightTag & { tag: Tag })[]
+}
 
 export default async function InboxPage() {
   const user = await requireCurrentUser()
@@ -14,19 +29,64 @@ export default async function InboxPage() {
         in: ["PENDING", "PROCESSING", "DONE"],
       },
     },
-    include: {
-      insight: {
-        include: {
-          tags: {
-            include: {
-              tag: true,
-            },
-          },
-        },
-      },
-    },
     orderBy: { createdAt: "desc" },
     take: 50,
+  })
+
+  const insightMap = new Map<string, InboxInsight[]>()
+
+  if (ingestItems.length > 0) {
+    const insightRecords = await prisma.insight.findMany({
+      where: {
+        ingestItemId: { in: ingestItems.map((item) => item.id) },
+      },
+      include: {
+        tags: {
+          include: { tag: true },
+        },
+      },
+    })
+
+    for (const record of insightRecords) {
+      if (!record.ingestItemId) continue
+      const bucket = insightMap.get(record.ingestItemId) ?? ([] as InboxInsight[])
+      const composed: InboxInsight = {
+        id: record.id,
+        userId: record.userId,
+        title: record.title,
+        summary: record.summary,
+        takeaway: record.takeaway,
+        content: record.content,
+        ingestItemId: record.ingestItemId,
+        sectionIndex: "sectionIndex" in record && typeof (record as any).sectionIndex === "number"
+          ? ((record as any).sectionIndex as number)
+          : null,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        tags: record.tags as (InsightTag & { tag: Tag })[],
+      }
+      bucket.push(composed)
+      bucket.sort((a, b) => {
+        const aIndex =
+          typeof (a as { sectionIndex?: number }).sectionIndex === "number"
+            ? ((a as { sectionIndex?: number }).sectionIndex as number)
+            : Number.MAX_SAFE_INTEGER
+        const bIndex =
+          typeof (b as { sectionIndex?: number }).sectionIndex === "number"
+            ? ((b as { sectionIndex?: number }).sectionIndex as number)
+            : Number.MAX_SAFE_INTEGER
+        return aIndex - bIndex
+      })
+      insightMap.set(record.ingestItemId, bucket)
+    }
+  }
+
+  const itemsWithInsights: InboxIngestItem[] = ingestItems.map((item) => {
+    const insights = insightMap.get(item.id) ?? ([] as InboxInsight[])
+    return {
+      ...item,
+      insights,
+    } as InboxIngestItem
   })
 
   return (
@@ -37,7 +97,7 @@ export default async function InboxPage() {
           <p className="text-muted-foreground text-lg">Recent captures and processing status</p>
         </div>
 
-        <InboxList items={ingestItems} />
+        <InboxList items={itemsWithInsights} />
       </div>
     </DashboardShell>
   )

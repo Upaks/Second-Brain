@@ -56,7 +56,7 @@ export default async function InsightsPage({
         take: 1,
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { sectionIndex: "asc" }],
   })
 
   const allTags = await prisma.tag.findMany({

@@ -39,9 +39,6 @@ export async function GET(request: NextRequest) {
       status: true,
       processedAt: true,
       createdAt: true,
-      insight: {
-        select: { id: true },
-      },
     },
   })
 
@@ -56,7 +53,8 @@ export async function GET(request: NextRequest) {
       status: item.status,
       processedAt: item.processedAt,
       createdAt: item.createdAt,
-      insightId: item.insight?.id ?? null,
+      insightIds: [],
+      insightId: null,
     })),
   })
 }

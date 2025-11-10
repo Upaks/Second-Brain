@@ -7,6 +7,7 @@ const InsightSchema = z.object({
   bullets: z.array(z.string().min(1)).min(1).max(7),
   takeaway: z.string().min(1),
   tags: z.array(z.string().min(1)).max(10).optional(),
+  source_excerpt: z.string().optional(),
 })
 
 export type GeneratedInsight = z.infer<typeof InsightSchema>
@@ -84,6 +85,92 @@ ${input}
   } catch (error) {
     console.error("[ai] summarize error", error)
     return FALLBACK_INSIGHT
+  }
+}
+
+const StructuredInsightsSchema = z.object({
+  summary: z.string().optional(),
+  insights: z.array(InsightSchema).min(1).max(8),
+})
+
+export type GeneratedStructuredInsights = z.infer<typeof StructuredInsightsSchema>
+
+export async function generateStructuredInsightsFromText(
+  rawText: string,
+  options?: { topicHint?: string; maxSections?: number },
+) {
+  const input = rawText.slice(0, 16000).trim()
+  if (!input) {
+    return { summary: undefined, insights: [FALLBACK_INSIGHT] } satisfies GeneratedStructuredInsights
+  }
+
+  const client = getOpenAIClient()
+  if (!client) {
+    return {
+      summary: undefined,
+      insights: [await generateInsightFromText(input, options)],
+    } satisfies GeneratedStructuredInsights
+  }
+
+  try {
+    const prompt = `You are an expert knowledge architect building a personal second brain.
+Divide the provided CONTENT into ${options?.maxSections ?? 6} concise insight cards.
+Return STRICT JSON matching this schema:
+{
+  "summary": string (<= 240 characters, optional),
+  "insights": [
+    {
+      "title": string (<= 90 chars),
+      "bullets": string[3-7],
+      "takeaway": string (<= 160 chars),
+      "tags": string[3-8],
+      "source_excerpt": string (<= 220 chars, optional)
+    }
+  ]
+}
+Rules:
+- Capture distinct subtopics or sections.
+- Use clear, professional language.
+- Bullets must be standalone facts (no numbering).
+- Tags should be short topical nouns.
+- source_excerpt should quote or paraphrase the relevant sentence where helpful.
+
+${options?.topicHint ? `Focus on the topic: ${options.topicHint}.` : ""}
+
+CONTENT:
+"""
+${input}
+"""
+`
+
+    const completion = await client.chat.completions.create({
+      model:
+        process.env.OPENROUTER_SUMMARY_MODEL ??
+        process.env.OPENAI_SUMMARY_MODEL ??
+        (process.env.OPENROUTER_API_KEY ? "meta-llama/llama-3.1-70b-instruct" : "gpt-4o-mini"),
+      messages: [
+        { role: "system", content: "You distill content into structured, high-quality insight cards." },
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.25,
+    })
+
+    const raw = completion.choices[0]?.message?.content?.trim()
+    if (!raw) {
+      return { summary: undefined, insights: [await generateInsightFromText(input, options)] }
+    }
+
+    const parsed = StructuredInsightsSchema.safeParse(JSON.parse(raw))
+    if (!parsed.success || parsed.data.insights.length === 0) {
+      console.warn("[ai] structured summarize parse fallback", parsed.error?.message)
+      return { summary: undefined, insights: [await generateInsightFromText(input, options)] }
+    }
+
+    return parsed.data
+  } catch (error) {
+    console.error("[ai] structured summarize error", error)
+    return { summary: undefined, insights: [await generateInsightFromText(input, options)] }
   }
 }
 

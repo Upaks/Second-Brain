@@ -35,7 +35,7 @@ export function CaptureComposer({ userId }: CaptureComposerProps) {
         }
 
         const data: {
-          items: Array<{ id: string; status: string; insightId: string | null }>
+          items: Array<{ id: string; status: string; insightId: string | null; insightIds: string[] }>
         } = await res.json()
 
         const item = data.items[0]

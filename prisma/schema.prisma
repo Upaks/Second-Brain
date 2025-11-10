@@ -74,7 +74,7 @@ model IngestItem {
   meta          Json?
   createdAt     DateTime      @default(now())
   processedAt   DateTime?
-  insight       Insight?
+  insights      Insight[]     @relation("ingest_item_insights")
   
   @@index([userId, status])
   @@index([createdAt])
@@ -106,8 +106,10 @@ model Insight {
   embedding       Unsupported("vector(1536)")?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
-  ingestItemId    String?               @unique
-  ingestItem      IngestItem?           @relation(fields: [ingestItemId], references: [id])
+  ingestItemId    String?
+  sectionIndex    Int?
+  sectionLabel    String?
+  ingestItem      IngestItem?           @relation("ingest_item_insights", fields: [ingestItemId], references: [id])
   tags            InsightTag[]
   linksFrom       InsightLink[]         @relation("links_from")
   linksTo         InsightLink[]         @relation("links_to")
@@ -117,6 +119,7 @@ model Insight {
   
   @@index([userId, createdAt])
   @@index([title])
+  @@index([ingestItemId, sectionIndex])
 }
 
 model Tag {

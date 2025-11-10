@@ -6,12 +6,12 @@ import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import type { IngestItem, Insight, Tag, InsightTag } from "@prisma/client"
 
-interface IngestItemWithInsight extends IngestItem {
-  insight:
-    | (Insight & {
-        tags: (InsightTag & { tag: Tag })[]
-      })
-    | null
+interface IngestItemWithInsights extends IngestItem {
+  insights: Array<
+    Insight & {
+      tags: (InsightTag & { tag: Tag })[]
+    }
+  >
 }
 
 const typeIcons = {
@@ -30,16 +30,16 @@ const statusConfig = {
 }
 
 interface InboxItemProps {
-  item: IngestItemWithInsight
+  item: IngestItemWithInsights
 }
 
 export function InboxItem({ item }: InboxItemProps) {
   const Icon = typeIcons[item.type]
   const status = statusConfig[item.status]
   const StatusIcon = status.icon
-
-  const content = item.insight ? (
-    <Link href={`/dashboard/insights/${item.insight.id}`} className="block group">
+  const primaryInsight = item.insights?.[0] ?? null
+  const content = primaryInsight ? (
+    <Link href={`/dashboard/insights/${primaryInsight.id}`} className="block group">
       <Card className="p-4 hover:shadow-md hover:border-primary/50 transition-all">
         <div className="flex items-start gap-4">
           <div className="p-2 rounded-lg bg-muted">
@@ -48,14 +48,14 @@ export function InboxItem({ item }: InboxItemProps) {
 
           <div className="flex-1 min-w-0">
             <h3 className="font-medium mb-1 line-clamp-1 group-hover:text-primary transition-colors">
-              {item.insight.title}
+              {primaryInsight.title}
             </h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">{item.insight.takeaway}</p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{primaryInsight.takeaway}</p>
 
             <div className="flex items-center gap-3 mt-3">
-              {item.insight.tags.length > 0 && (
+              {primaryInsight.tags.length > 0 && (
                 <div className="flex gap-1">
-                  {item.insight.tags.slice(0, 3).map(({ tag }) => (
+                  {primaryInsight.tags.slice(0, 3).map(({ tag }) => (
                     <Badge key={tag.id} variant="secondary" className="text-xs">
                       {tag.name}
                     </Badge>

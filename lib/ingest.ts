@@ -1,4 +1,4 @@
-import type { IngestItem } from "@prisma/client"
+import { Prisma, type IngestItem } from "@prisma/client"
 import PdfParser from "pdf2json"
 import { Readability } from "@mozilla/readability"
 import { JSDOM } from "jsdom"
@@ -8,7 +8,7 @@ import { XMLParser } from "fast-xml-parser"
 
 import { prisma } from "./db"
 import { generateEmbedding } from "./ai/embed"
-import { generateInsightFromText } from "./ai/summarize"
+import { generateStructuredInsightsFromText } from "./ai/summarize"
 import { setInsightEmbedding, upsertTagsForInsight } from "./insights"
 import { downloadFromStorage } from "./storage"
 import { extractTextFromAudio, extractTextFromImage } from "./ai/extract"
@@ -258,36 +258,88 @@ export async function processIngestItem({ item }: ProcessOptions) {
       }
     }
 
-    const generated = await generateInsightFromText(content || "Captured content")
+    const structured = await generateStructuredInsightsFromText(content || "Captured content")
 
-    const existingInsight = await prisma.insight.findUnique({
-      where: { ingestItemId: item.id },
-      select: { id: true },
+    const existingInsightsRaw = await prisma.$queryRaw<Array<{ id: string; sectionIndex: number | null }>>`
+      SELECT "id", "sectionIndex"
+      FROM "Insight"
+      WHERE "ingestItemId" = ${item.id}
+    `
+
+    const existingInsights = existingInsightsRaw.sort((a, b) => {
+      const aIndex = typeof a.sectionIndex === "number" ? a.sectionIndex : Number.MAX_SAFE_INTEGER
+      const bIndex = typeof b.sectionIndex === "number" ? b.sectionIndex : Number.MAX_SAFE_INTEGER
+      return aIndex - bIndex
     })
 
-    const insight = await prisma.insight.upsert({
-      where: { ingestItemId: item.id },
-      update: {
-        title: generated.title,
-        summary: generated.bullets.join("\n"),
-        takeaway: generated.takeaway,
-        content,
-      },
-      create: {
-        userId,
-        title: generated.title,
-        summary: generated.bullets.join("\n"),
-        takeaway: generated.takeaway,
-        content,
-        ingestItemId: item.id,
-      },
-    })
+    const processedInsightIds: string[] = []
 
-    await upsertTagsForInsight(userId, insight.id, generated.tags ?? [])
+    for (const [index, generated] of structured.insights.entries()) {
+      const existing = existingInsights[index]
+      const summary = generated.bullets.join("\n")
+      const insightContent = generated.source_excerpt?.trim() || content
 
-    const embedding = await generateEmbedding(`${generated.takeaway}\n${generated.bullets.join("\n")}`)
-    if (embedding.length) {
-      await setInsightEmbedding(insight.id, embedding)
+      const insight = existing
+        ? await prisma.$queryRaw<
+            Array<{ id: string; title: string; summary: string; takeaway: string; content: string | null }>
+          >`
+            UPDATE "Insight"
+            SET "title" = ${generated.title},
+                "summary" = ${summary},
+                "takeaway" = ${generated.takeaway},
+                "content" = ${insightContent},
+                "sectionIndex" = ${index},
+                "sectionLabel" = ${generated.title},
+                "updatedAt" = NOW()
+            WHERE "id" = ${existing.id}
+            RETURNING "id", "title", "summary", "takeaway", "content"
+          `
+        : await prisma.$queryRaw<
+            Array<{ id: string; title: string; summary: string; takeaway: string; content: string | null }>
+          >`
+            INSERT INTO "Insight" ("id", "userId", "title", "summary", "takeaway", "content", "ingestItemId", "sectionIndex", "sectionLabel", "createdAt", "updatedAt")
+            VALUES (gen_random_uuid(), ${userId}, ${generated.title}, ${summary}, ${generated.takeaway}, ${insightContent}, ${item.id}, ${index}, ${generated.title}, NOW(), NOW())
+            RETURNING "id", "title", "summary", "takeaway", "content"
+          `
+
+      const updatedInsight = Array.isArray(insight) ? insight[0] : (insight as any)
+      if (!updatedInsight) {
+        throw new Error("Failed to upsert insight section")
+      }
+
+      processedInsightIds.push(updatedInsight.id)
+
+      await upsertTagsForInsight(userId, updatedInsight.id, generated.tags ?? [])
+
+      const embedding = await generateEmbedding(`${generated.takeaway}\n${generated.bullets.join("\n")}`)
+      if (embedding.length) {
+        await setInsightEmbedding(updatedInsight.id, embedding)
+      }
+    }
+
+    if (existingInsights.length > structured.insights.length) {
+      const excess = existingInsights.slice(structured.insights.length)
+      const excessIds = excess.map((insight) => insight.id)
+      if (excessIds.length) {
+        const idArray = Prisma.join(excessIds.map((id) => Prisma.sql`${id}::uuid`))
+        await prisma.$executeRaw`
+          DELETE FROM "Insight"
+          WHERE "id" = ANY(ARRAY[${idArray}]::uuid[])
+        `
+      }
+    }
+
+    const metaUpdate =
+      item.meta && typeof item.meta === "object" && !Array.isArray(item.meta)
+        ? { ...item.meta }
+        : {}
+    metaUpdate.structured = {
+      summary: structured.summary ?? null,
+      sections: structured.insights.map((insight, index) => ({
+        index,
+        title: insight.title,
+        takeaway: insight.takeaway,
+      })),
     }
 
     await prisma.ingestItem.update({
@@ -296,10 +348,11 @@ export async function processIngestItem({ item }: ProcessOptions) {
         status: "DONE",
         processedAt: new Date(),
         rawText: content,
+        meta: metaUpdate,
       },
     })
 
-    return { insightId: insight.id, ingestItemId: item.id, reused: Boolean(existingInsight) }
+    return { insightIds: processedInsightIds, ingestItemId: item.id, reused: existingInsights.length > 0 }
   } catch (error) {
     await prisma.ingestItem.update({
       where: { id: item.id },
