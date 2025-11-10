@@ -22,6 +22,7 @@ import { FlashcardCard } from "./flashcard-card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import {
   ChevronLeft,
@@ -36,6 +37,7 @@ import {
   Search,
   Share2,
   Wand2,
+  Plus,
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
@@ -210,6 +212,7 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
   const [shareError, setShareError] = useState<string | null>(null)
   const [isGeneratingShareLink, setIsGeneratingShareLink] = useState(false)
   const [hasCopiedShareUrl, setHasCopiedShareUrl] = useState(false)
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false)
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false)
   const [activeReviewCardId, setActiveReviewCardId] = useState<string | null>(null)
   const [difficultyFilter, setDifficultyFilter] = useState<FlashcardDifficulty | "all">("all")
@@ -234,6 +237,22 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
 
   useEffect(() => {
     setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1280px)")
+    if (media.matches) {
+      setIsRightPanelOpen(false)
+    }
+
+    function handleChange(event: MediaQueryListEvent) {
+      if (event.matches) {
+        setIsRightPanelOpen(false)
+      }
+    }
+
+    media.addEventListener("change", handleChange)
+    return () => media.removeEventListener("change", handleChange)
   }, [])
 
   useEffect(() => {
@@ -754,6 +773,369 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
     selectedDeck?.description ??
     "Arrange, remix, and reinforce the ideas that matter without losing the context that made them meaningful."
 
+  const RightPanel = ({
+    className,
+    scrollClassName,
+  }: {
+    className?: string
+    scrollClassName?: string
+  }) => (
+    <Tabs
+      value={rightPanelTab}
+      onValueChange={(value) => setRightPanelTab(value as typeof rightPanelTab)}
+      className={cn("flex flex-col bg-slate-950/95", className)}
+    >
+      <div className="px-5 pt-5">
+        <TabsList className="grid w-full grid-cols-3 rounded-xl border border-slate-800 bg-slate-900/80">
+          <TabsTrigger
+            value="deck"
+            className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+          >
+            Deck
+          </TabsTrigger>
+          <TabsTrigger
+            value="style"
+            className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+          >
+            Style
+          </TabsTrigger>
+          <TabsTrigger
+            value="edit"
+            className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
+          >
+            Edit
+          </TabsTrigger>
+        </TabsList>
+      </div>
+      <ScrollArea className={cn("flex-1 px-5 pb-6", scrollClassName)}>
+        <TabsContent value="deck" className="space-y-5 pt-4">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Deck</p>
+            <Select value={selectedDeckId} onValueChange={setSelectedDeckId}>
+              <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                <SelectValue placeholder="Select a deck" />
+              </SelectTrigger>
+              <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                {decks.map((deck) => (
+                  <SelectItem key={deck.id} value={deck.id}>
+                    {deck.name} ({deck.flashcards.length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500">{deckDescription}</p>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Stats</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-200">
+              <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Accepted</p>
+                <p className="mt-1 text-lg font-semibold text-slate-100">{acceptedCount}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Pending</p>
+                <p className="mt-1 text-lg font-semibold text-amber-300">{pendingCount}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Generated</p>
+                <p className="mt-1 text-lg font-semibold text-slate-100">{totalCards}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Last added</p>
+                <p className="mt-1 text-lg font-semibold text-slate-100">{lastAdded}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Filters</p>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search cards"
+                className="h-10 w-full rounded-lg border border-slate-800 bg-slate-950/70 pl-9 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Select value={difficultyFilter} onValueChange={(value) => setDifficultyFilter(value as typeof difficultyFilter)}>
+                <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                  <SelectItem value="all">All difficulties</SelectItem>
+                  <SelectItem value="foundation">Foundation</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="challenge">Challenge</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={cardTypeFilter} onValueChange={(value) => setCardTypeFilter(value as typeof cardTypeFilter)}>
+                <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                  <SelectValue placeholder="Card type" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                  <SelectItem value="all">All types</SelectItem>
+                  <SelectItem value="core">Core insights</SelectItem>
+                  <SelectItem value="detail">Deep dives</SelectItem>
+                  <SelectItem value="tag">Tag lenses</SelectItem>
+                </SelectContent>
+              </Select>
+              {deckTags.length > 0 && (
+                <Select value={tagFilter} onValueChange={(value) => setTagFilter(value as typeof tagFilter)}>
+                  <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
+                    <SelectValue placeholder="Tag filter" />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
+                    <SelectItem value="all">All tags</SelectItem>
+                    {deckTags.map((tag) => (
+                      <SelectItem key={tag} value={tag}>
+                        {tag}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                className="w-full border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                onClick={handleClearFilters}
+              >
+                Clear filters
+              </Button>
+            )}
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Viewing {filteredCount === 0 ? 0 : startRange}–{filteredCount === 0 ? 0 : endRange} of {filteredCount}
+            </p>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="style" className="space-y-5 pt-4">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Board background</p>
+            <div className="grid grid-cols-2 gap-3">
+              {boardBackgrounds.map((option) => (
+                <Button
+                  key={option.id}
+                  variant={boardBackground === option.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setBoardBackground(option.id)}
+                  className="h-16 flex-col items-start gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-left text-slate-100"
+                >
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{option.label}</span>
+                  <span className={cn("h-7 w-7 rounded-full border border-white/20", option.className)} />
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Card theme</p>
+            <div className="flex flex-wrap gap-2">
+              {cardThemes.map((option) => (
+                <Button
+                  key={option.id}
+                  variant={theme === option.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTheme(option.id)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900 transition-all hover:border-slate-500"
+                >
+                  <span className={cn("h-7 w-7 rounded-full border border-white/20", option.swatch)} />
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Card size</p>
+            <div className="flex flex-wrap gap-2">
+              {cardSizes.map((option) => (
+                <Button
+                  key={option.id}
+                  variant={cardSize === option.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCardSize(option.id)}
+                  className="rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 capitalize"
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Typeface</p>
+            <div className="flex flex-wrap gap-2">
+              {fonts.map((option) => (
+                <Button
+                  key={option.id}
+                  variant={fontFamily === option.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFontFamily(option.id)}
+                  className="rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 capitalize"
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Layout</p>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { id: "grid", icon: Rows3, label: "Grid" },
+                { id: "stack", icon: Rows, label: "Stack" },
+                { id: "storyboard", icon: Rows2, label: "Storyboard" },
+              ] as const).map((option) => (
+                <Button
+                  key={option.id}
+                  variant={layoutMode === option.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLayoutMode(option.id)}
+                  className="gap-2 rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+                >
+                  <option.icon className="h-4 w-4" />
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Canvas mood</p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { id: "neutral", label: "Neutral", className: "bg-slate-100/40" },
+                { id: "focus", label: "Focus", className: "bg-indigo-500/20" },
+                { id: "warm", label: "Warm", className: "bg-amber-400/20" },
+                { id: "energy", label: "Energy", className: "bg-emerald-400/20" },
+              ].map((option) => (
+                <Button
+                  key={option.id}
+                  variant={boardBackground === option.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setBoardBackground(option.id)}
+                  className="h-16 flex-col items-start gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-left text-slate-100"
+                >
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{option.label}</span>
+                  <span className={cn("h-7 w-7 rounded-full border border-white/20", option.className)} />
+                </Button>
+              ))}
+            </div>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="edit" className="space-y-5 pt-4">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Selected card</p>
+            {focusCard ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary" className="rounded-full bg-slate-900 text-white">
+                    {focusCard.cardType}
+                  </Badge>
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <span>{focusCard.difficulty ?? "unrated"}</span>
+                    <span>•</span>
+                    <span>{focusCard.tags.join(", ") || "No tags"}</span>
+                  </div>
+                </div>
+                <div className="space-y-3 text-sm text-slate-200">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Question</p>
+                    <Textarea
+                      value={pendingDrafts[focusCard.id]?.question ?? focusCard.question}
+                      onChange={(event) =>
+                        setPendingDrafts((prev) => ({
+                          ...prev,
+                          [focusCard.id]: {
+                            question: event.target.value,
+                            answer: pendingDrafts[focusCard.id]?.answer ?? focusCard.answer,
+                          },
+                        }))
+                      }
+                      className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Answer</p>
+                    <Textarea
+                      value={pendingDrafts[focusCard.id]?.answer ?? focusCard.answer}
+                      onChange={(event) =>
+                        setPendingDrafts((prev) => ({
+                          ...prev,
+                          [focusCard.id]: {
+                            question: pendingDrafts[focusCard.id]?.question ?? focusCard.question,
+                            answer: event.target.value,
+                          },
+                        }))
+                      }
+                      className="min-h-[110px] resize-y rounded-lg border border-emerald-500/60 bg-emerald-950/50 text-emerald-100 placeholder:text-emerald-300/70 focus:border-emerald-400 focus:ring-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Key points</p>
+                    <Textarea
+                      value={(focusCard.keyPoints ?? []).join("\n")}
+                      onChange={(event) => {
+                        const nextValue = event.target.value
+                        setCards((prev) =>
+                          prev.map((card) =>
+                            card.id === focusCard.id ? { ...card, keyPoints: nextValue.split(/\n+/).filter(Boolean) } : card,
+                          ),
+                        )
+                      }}
+                      className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Reflection prompt</p>
+                    <Textarea
+                      value={focusCard.followUpPrompts.join("\n")}
+                      onChange={(event) => {
+                        const nextValue = event.target.value
+                        setCards((prev) =>
+                          prev.map((card) =>
+                            card.id === focusCard.id
+                              ? { ...card, followUpPrompts: nextValue.split(/\n+/).filter(Boolean) }
+                              : card,
+                          ),
+                        )
+                      }}
+                      className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button className="gap-2 bg-amber-500 text-slate-900 hover:bg-amber-400" onClick={handleSendCardBackToReview}>
+                    <RotateCcw className="h-4 w-4" />
+                    Send back to review
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setFocusCard(null)}
+                    className="border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">
+                Select a card to view its details here.
+              </div>
+            )}
+          </section>
+        </TabsContent>
+      </ScrollArea>
+    </Tabs>
+  );
+
   return (
     <>
       <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden border border-slate-900 bg-slate-950 text-slate-100 shadow-2xl">
@@ -853,6 +1235,14 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
               {isGeneratingShareLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
               Share
             </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800 xl:hidden"
+              onClick={() => setIsRightPanelOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Panel
+            </Button>
           </div>
         </header>
 
@@ -922,373 +1312,20 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
             </div>
           </div>
 
-          <Tabs
-            value={rightPanelTab}
-            onValueChange={(value) => setRightPanelTab(value as typeof rightPanelTab)}
-            className="flex w-full flex-shrink-0 flex-col border-t border-slate-900 bg-slate-950/95 xl:h-full xl:w-[340px] xl:border-t-0 xl:border-l"
-          >
-            <div className="px-5 pt-5">
-              <TabsList className="grid w-full grid-cols-3 rounded-xl border border-slate-800 bg-slate-900/80">
-                <TabsTrigger
-                  value="deck"
-                  className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
-                >
-                  Deck
-                </TabsTrigger>
-                <TabsTrigger
-                  value="style"
-                  className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
-                >
-                  Style
-                </TabsTrigger>
-                <TabsTrigger
-                  value="edit"
-                  className="px-3 py-2 text-xs text-slate-400 data-[state=active]:bg-slate-800 data-[state=active]:text-white"
-                >
-                  Edit
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <ScrollArea className="flex-1 px-5 pb-6 xl:h-full xl:overflow-hidden">
-              <TabsContent value="deck" className="space-y-5 pt-4">
-                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
-                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Deck</p>
-                  <Select value={selectedDeckId} onValueChange={setSelectedDeckId}>
-                    <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
-                      <SelectValue placeholder="Select a deck" />
-                    </SelectTrigger>
-                    <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
-                      {decks.map((deck) => (
-                        <SelectItem key={deck.id} value={deck.id}>
-                          {deck.name} ({deck.flashcards.length})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-slate-500">{deckDescription}</p>
-                </section>
-
-                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
-                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Stats</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-200">
-                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Accepted</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">{acceptedCount}</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Pending</p>
-                      <p className="mt-1 text-lg font-semibold text-amber-300">{pendingCount}</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Generated</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">{totalCards}</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Last added</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">{lastAdded}</p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
-                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Filters</p>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                    <Input
-                      type="search"
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Search cards"
-                      className="h-10 w-full rounded-lg border border-slate-800 bg-slate-950/70 pl-9 text-slate-100 placeholder:text-slate-500"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Select value={difficultyFilter} onValueChange={(value) => setDifficultyFilter(value as typeof difficultyFilter)}>
-                      <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
-                        <SelectValue placeholder="Difficulty" />
-                      </SelectTrigger>
-                      <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
-                        <SelectItem value="all">All difficulties</SelectItem>
-                        <SelectItem value="foundation">Foundation</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="challenge">Challenge</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={cardTypeFilter} onValueChange={(value) => setCardTypeFilter(value as typeof cardTypeFilter)}>
-                      <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
-                        <SelectValue placeholder="Card type" />
-                      </SelectTrigger>
-                      <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
-                        <SelectItem value="all">All types</SelectItem>
-                        <SelectItem value="core">Core insights</SelectItem>
-                        <SelectItem value="detail">Deep dives</SelectItem>
-                        <SelectItem value="tag">Tag lenses</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {deckTags.length > 0 && (
-                      <Select value={tagFilter} onValueChange={(value) => setTagFilter(value as typeof tagFilter)}>
-                        <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
-                          <SelectValue placeholder="Tag filter" />
-                        </SelectTrigger>
-                        <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
-                          <SelectItem value="all">All tags</SelectItem>
-                          {deckTags.map((tag) => (
-                            <SelectItem key={tag} value={tag}>
-                              {tag}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                  {hasActiveFilters && (
-                    <Button
-                      variant="outline"
-                      className="w-full border-slate-800 text-slate-200 hover:bg-slate-900"
-                      onClick={handleClearFilters}
-                    >
-                      Clear filters
-                    </Button>
-                  )}
-                  <p className="text-[11px] uppercase tracking-wide text-slate-500">
-                    Viewing {filteredCount === 0 ? 0 : startRange}–{filteredCount === 0 ? 0 : endRange} of {filteredCount}
-                  </p>
-                </section>
-              </TabsContent>
-
-              <TabsContent value="style" className="space-y-4 pt-4">
-                <ControlColumn label="Card theme">
-                  <div className="flex flex-wrap gap-2">
-                    {cardThemes.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        title={option.label}
-                        onClick={() => setTheme(option.id)}
-                        className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900 transition-all hover:border-slate-500",
-                          theme === option.id && "ring-2 ring-indigo-400",
-                        )}
-                      >
-                        <span className={cn("h-7 w-7 rounded-full border border-white/20", option.swatch)} />
-                      </button>
-                    ))}
-                  </div>
-                </ControlColumn>
-
-                <ControlColumn label="Card size">
-                  <div className="flex flex-wrap gap-2">
-                    {cardSizes.map((entry) => (
-                      <Button
-                        key={entry.id}
-                        variant={cardSize === entry.id ? "default" : "outline"}
-                        size="sm"
-                        className={cn(
-                          "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
-                          cardSize === entry.id && "bg-indigo-500 text-white hover:bg-indigo-400",
-                        )}
-                        onClick={() => setCardSize(entry.id as typeof cardSize)}
-                      >
-                        {entry.label}
-                      </Button>
-                    ))}
-                  </div>
-                </ControlColumn>
-
-                <ControlColumn label="Typeface">
-                  <div className="flex flex-wrap gap-2">
-                    {fonts.map((entry) => (
-                      <Button
-                        key={entry.id}
-                        variant={fontFamily === entry.id ? "default" : "outline"}
-                        size="sm"
-                        className={cn(
-                          "rounded-full border-slate-700 bg-slate-900 text-slate-200 capitalize hover:bg-slate-800",
-                          fontFamily === entry.id && "bg-indigo-500 text-white hover:bg-indigo-400",
-                        )}
-                        onClick={() => setFontFamily(entry.id as typeof fontFamily)}
-                      >
-                        {entry.label}
-                      </Button>
-                    ))}
-                  </div>
-                </ControlColumn>
-
-                <ControlColumn label="Layout mode">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={layoutMode === "grid" ? "default" : "outline"}
-                      size="icon"
-                      className={cn(
-                        "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
-                        layoutMode === "grid" && "bg-indigo-500 text-white hover:bg-indigo-400",
-                      )}
-                      onClick={() => setLayoutMode("grid")}
-                    >
-                      <Rows3 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={layoutMode === "stack" ? "default" : "outline"}
-                      size="icon"
-                      className={cn(
-                        "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
-                        layoutMode === "stack" && "bg-indigo-500 text-white hover:bg-indigo-400",
-                      )}
-                      onClick={() => setLayoutMode("stack")}
-                    >
-                      <Rows2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={layoutMode === "storyboard" ? "default" : "outline"}
-                      size="icon"
-                      className={cn(
-                        "rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800",
-                        layoutMode === "storyboard" && "bg-indigo-500 text-white hover:bg-indigo-400",
-                      )}
-                      onClick={() => setLayoutMode("storyboard")}
-                    >
-                      <Rows className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </ControlColumn>
-
-                <ControlColumn label="Canvas mood">
-                  <Select value={boardBackground} onValueChange={setBoardBackground}>
-                    <SelectTrigger className="w-full rounded-lg border border-slate-800 bg-slate-950/70 text-left text-slate-100">
-                      <SelectValue placeholder="Canvas" />
-                    </SelectTrigger>
-                    <SelectContent className="border-slate-800 bg-slate-900 text-slate-100">
-                      {boardBackgrounds.map((entry) => (
-                        <SelectItem key={entry.id} value={entry.id}>
-                          {entry.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </ControlColumn>
-              </TabsContent>
-
-              <TabsContent value="edit" className="space-y-4 pt-4">
-                <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
-                  <p className="text-[11px] uppercase tracking-wide text-slate-400">Inspector</p>
-                  {focusCard && inspectorDraft ? (
-                    <div className="space-y-4 text-sm text-slate-200">
-                      <div className="flex flex-wrap gap-2 text-xs uppercase tracking-wide text-slate-400">
-                        <Badge variant="secondary" className="rounded-full bg-slate-900 text-white">
-                          {focusCard.difficulty}
-                        </Badge>
-                        <Badge variant="outline" className="rounded-full border-slate-700 text-slate-200">
-                          {focusCard.cardType === "core"
-                            ? "Core insight"
-                            : focusCard.cardType === "detail"
-                              ? "Deep dive"
-                              : "Tag lens"}
-                        </Badge>
-                        {focusCard.tags
-                          .filter((tag) => !tag.startsWith("card:"))
-                          .map((tag) => (
-                            <Badge key={tag} variant="outline" className="rounded-full border-slate-700 text-slate-200">
-                              {tag}
-                            </Badge>
-                          ))}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Prompt</label>
-                        <Textarea
-                          value={inspectorDraft.question}
-                          onChange={(event) => updateInspectorDraft("question", event.target.value)}
-                          className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Answer</label>
-                        <Textarea
-                          value={inspectorDraft.answer}
-                          onChange={(event) => updateInspectorDraft("answer", event.target.value)}
-                          className="min-h-[110px] resize-y rounded-lg border border-emerald-500/60 bg-emerald-950/50 text-emerald-100 placeholder:text-emerald-300/70 focus:border-emerald-400 focus:ring-emerald-400"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Key points (one per line)
-                        </label>
-                        <Textarea
-                          value={inspectorDraft.keyPoints}
-                          onChange={(event) => updateInspectorDraft("keyPoints", event.target.value)}
-                          className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
-                          placeholder="Add supporting bullets, one per line."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Reflection prompts (one per line)
-                        </label>
-                        <Textarea
-                          value={inspectorDraft.followUps}
-                          onChange={(event) => updateInspectorDraft("followUps", event.target.value)}
-                          className="min-h-[110px] resize-y rounded-lg border border-slate-800 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-600"
-                          placeholder="Add follow-up prompts, one per line."
-                        />
-                      </div>
-
-                      {focusCard.source?.url && (
-                        <div className="space-y-1 text-xs">
-                          <p className="uppercase tracking-wide text-slate-400">Source</p>
-                          <a
-                            href={focusCard.source.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sm font-medium text-indigo-300 hover:text-indigo-200"
-                          >
-                            {focusCard.source.title ?? focusCard.source.url}
-                          </a>
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-3">
-                        <Button
-                          onClick={handleInspectorSave}
-                          disabled={!hasInspectorChanges}
-                          className="bg-indigo-500 text-white hover:bg-indigo-400"
-                        >
-                          Save changes
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={handleInspectorReset}
-                          disabled={!hasInspectorChanges}
-                          className="border-slate-800 text-slate-200 hover:bg-slate-900"
-                        >
-                          Reset
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className="gap-2 text-slate-400 hover:text-slate-200"
-                          onClick={handleSendCardBackToReview}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          Send back to review
-                        </Button>
-                      </div>
-                      {!hasInspectorChanges && (
-                        <p className="text-xs text-slate-500">
-                          Tip: edits save locally for this deck. Approved cards will use the updated wording in exports and share links.
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">Select a card on the canvas to inspect and edit its details.</p>
-                  )}
-                </section>
-              </TabsContent>
-            </ScrollArea>
-          </Tabs>
+          <div className="hidden xl:flex xl:w-[340px] xl:flex-shrink-0">
+            <RightPanel className="h-full w-full border-l border-slate-900" scrollClassName="h-full overflow-hidden" />
+          </div>
         </div>
       </div>
+
+      <Sheet open={isRightPanelOpen} onOpenChange={setIsRightPanelOpen}>
+        <SheetContent side="right" className="w-full max-w-md border-l border-slate-900 bg-slate-950 p-0 text-slate-100">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Workspace controls</SheetTitle>
+          </SheetHeader>
+          <RightPanel className="h-full w-full" scrollClassName="h-full" />
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
         <DialogContent className="flex w-[95vw] max-h-[90vh] flex-col overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl sm:max-w-[1100px]">
@@ -1418,7 +1455,7 @@ export function FlashcardWorkspace({ decks, totalCards }: FlashcardWorkspaceProp
                     </Button>
                     <Button
                       variant="outline"
-                      className="gap-2"
+                      className="gap-2 border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
                       onClick={() => activeReviewCard && handleSkipPending(activeReviewCard.id)}
                     >
                       Skip this card
