@@ -24,14 +24,14 @@ export function SearchResults({ results, query }: SearchResultsProps) {
           const upcomingReminder = insight.reminders?.[0]
 
           return (
-            <Link key={insight.id} href={`/dashboard/insights/${insight.id}`}>
-              <Card className="p-6 hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer group">
-                <div className="space-y-3">
+          <Link key={insight.id} href={`/dashboard/insights/${insight.id}`}>
+            <Card className="p-6 hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer group">
+              <div className="space-y-3">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
-                        {insight.title}
-                      </h3>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                    {insight.title}
+                  </h3>
                       <p className="text-base text-muted-foreground leading-relaxed line-clamp-2">
                         {insight.takeaway}
                       </p>
@@ -41,43 +41,43 @@ export function SearchResults({ results, query }: SearchResultsProps) {
                         Match {(insight.similarity * 100).toFixed(0)}%
                       </Badge>
                     )}
-                  </div>
+                </div>
 
-                  {insight.summary && (
-                    <div className="space-y-1 pt-2">
-                      {insight.summary
-                        .split("\n")
-                        .slice(0, 2)
-                        .map((bullet, i) => (
-                          <div key={i} className="flex gap-2 text-sm text-muted-foreground">
-                            <span className="text-primary">•</span>
-                            <span className="line-clamp-1">{bullet}</span>
-                          </div>
-                        ))}
+                {insight.summary && (
+                  <div className="space-y-1 pt-2">
+                    {insight.summary
+                      .split("\n")
+                      .slice(0, 2)
+                      .map((bullet, i) => (
+                        <div key={i} className="flex gap-2 text-sm text-muted-foreground">
+                          <span className="text-primary">•</span>
+                          <span className="line-clamp-1">{bullet}</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-3 border-t">
+                  {insight.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {insight.tags.slice(0, 4).map(({ tag }) => (
+                        <Badge key={tag.id} variant="secondary" className="text-xs">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                      {insight.tags.length > 4 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{insight.tags.length - 4}
+                        </Badge>
+                      )}
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    {insight.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {insight.tags.slice(0, 4).map(({ tag }) => (
-                          <Badge key={tag.id} variant="secondary" className="text-xs">
-                            {tag.name}
-                          </Badge>
-                        ))}
-                        {insight.tags.length > 4 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{insight.tags.length - 4}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(new Date(insight.createdAt), { addSuffix: true })}
-                    </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(new Date(insight.createdAt), { addSuffix: true })}
                   </div>
+                </div>
 
                   {upcomingReminder && (
                     <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
@@ -85,9 +85,9 @@ export function SearchResults({ results, query }: SearchResultsProps) {
                       Reminder {format(new Date(upcomingReminder.dueAt), "MMM d, yyyy h:mm a")}
                     </div>
                   )}
-                </div>
-              </Card>
-            </Link>
+              </div>
+            </Card>
+          </Link>
           )
         })}
       </div>
