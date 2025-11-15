@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { revalidateCollections, revalidateInsights } from "@/lib/cache/tags"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       data: { updatedAt: new Date() },
     })
 
+    revalidateCollections(user.id)
+    revalidateInsights(user.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Collection insights update error:", error)

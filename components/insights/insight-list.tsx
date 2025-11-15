@@ -1,15 +1,7 @@
 import { Empty, EmptyIcon, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { InsightCard } from "./insight-card"
 import { Lightbulb } from "lucide-react"
-
-export type InsightListItem = {
-  id: string
-  title: string
-  takeaway: string
-  createdAt: Date
-  tags: { tag: { id: string; name: string } }[]
-  reminders: { id: string; dueAt: Date }[]
-}
+import type { InsightListItem } from "@/types/insights"
 
 interface InsightListProps {
   insights: InsightListItem[]

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Link2, Bell } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
-import type { InsightGridItem } from "./insight-grid"
+import type { InsightGridItem } from "@/types/insights"
 
 interface InsightCardExpandedProps {
   insight: InsightGridItem
@@ -29,8 +29,8 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
 
           {insight.summaryPreview.length > 0 && (
             <div className="space-y-2">
-              {insight.summaryPreview.map((bullet, i) => (
-                <div key={i} className="flex gap-2 text-sm text-muted-foreground">
+              {insight.summaryPreview.map((bullet, index) => (
+                <div key={index} className="flex gap-2 text-sm text-muted-foreground">
                   <span className="text-primary mt-1">•</span>
                   <span className="line-clamp-1">{bullet}</span>
                 </div>
@@ -42,11 +42,13 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
         <div className="space-y-3 pt-3 border-t">
           {insight.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {insight.tags.slice(0, 4).map(({ tag }) => (
-                <Badge key={tag.id} variant="secondary" className="text-xs">
-                  {tag.name}
-                </Badge>
-              ))}
+              {insight.tags.slice(0, 4).map(({ tag }) => {
+                return (
+                  <Badge key={tag.id} variant="secondary" className="text-xs">
+                    {tag.name}
+                  </Badge>
+                )
+              })}
               {insight.tags.length > 4 && (
                 <Badge variant="secondary" className="text-xs">
                   +{insight.tags.length - 4}

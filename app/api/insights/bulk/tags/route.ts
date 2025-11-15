@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { revalidateInsights, revalidateTags } from "@/lib/cache/tags"
 
 function normalizeTags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return []
@@ -87,6 +88,8 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      revalidateInsights(user.id)
+      revalidateTags(user.id)
       return NextResponse.json({ success: true, updated: ownedIds.length })
     }
 
@@ -117,6 +120,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidateInsights(user.id)
+    revalidateTags(user.id)
     return NextResponse.json({ success: true, updated: deleted.count })
   } catch (error) {
     console.error("[v0] Bulk tag update error:", error)

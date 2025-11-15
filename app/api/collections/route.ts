@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { revalidateCollections } from "@/lib/cache/tags"
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidateCollections(user.id)
     return NextResponse.json(collection)
   } catch (error) {
     console.error("[v0] Create collection error:", error)

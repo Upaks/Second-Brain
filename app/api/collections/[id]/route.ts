@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { revalidateCollections } from "@/lib/cache/tags"
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -30,6 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       },
     })
 
+    revalidateCollections(user.id)
     return NextResponse.json(updated)
   } catch (error) {
     console.error("[v0] Update collection error:", error)
@@ -59,6 +61,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       where: { id },
     })
 
+    revalidateCollections(user.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Delete collection error:", error)

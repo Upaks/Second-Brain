@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, X } from "lucide-react"
-import type { AvailableTag } from "./insight-grid"
+import type { AvailableTag } from "@/types/insights"
 import {
   DropdownMenu,
   DropdownMenuContent,

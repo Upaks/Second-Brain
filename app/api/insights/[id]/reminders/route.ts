@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { revalidateInsights } from "@/lib/cache/tags"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     })
 
+    revalidateInsights(user.id)
     return NextResponse.json(reminder)
   } catch (error) {
     console.error("[v0] Reminder create error:", error)

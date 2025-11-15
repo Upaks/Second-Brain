@@ -1,22 +1,72 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 
 import { InsightFilters } from "./insight-filters"
-import { InsightGrid, type InsightGridItem, type AvailableTag } from "./insight-grid"
+import { InsightGrid } from "./insight-grid"
+import type { InsightGridItem, AvailableTag } from "@/types/insights"
 
 interface InsightsPageClientProps {
   initialInsights: InsightGridItem[]
+  initialCursor: string | null
   tags: AvailableTag[]
   selectedTag?: string
 }
 
-export function InsightsPageClient({ initialInsights, tags, selectedTag }: InsightsPageClientProps) {
+export function InsightsPageClient({ initialInsights, initialCursor, tags, selectedTag }: InsightsPageClientProps) {
   const [insights, setInsights] = useState<InsightGridItem[]>(initialInsights)
+  const [nextCursor, setNextCursor] = useState<string | null>(initialCursor)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchPage = useCallback(
+    async (cursor?: string) => {
+      const params = new URLSearchParams()
+      if (cursor) {
+        params.set("cursor", cursor)
+      }
+      if (selectedTag) {
+        params.set("tag", selectedTag)
+      }
+
+      const res = await fetch(`/api/insights/list?${params.toString()}`, {
+        method: "GET",
+        cache: "no-store",
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to load insights")
+      }
+
+      return (await res.json()) as { items: InsightGridItem[]; nextCursor: string | null }
+    },
+    [selectedTag],
+  )
 
   useEffect(() => {
     setInsights(initialInsights)
-  }, [initialInsights])
+    setNextCursor(initialCursor)
+    setError(null)
+  }, [initialInsights, initialCursor])
+
+  useEffect(() => {
+    const handler = () => {
+      startTransition(async () => {
+        try {
+          setError(null)
+          const data = await fetchPage()
+          setInsights(data.items)
+          setNextCursor(data.nextCursor)
+        } catch (err) {
+          console.error("[v0] Refresh insights error:", err)
+          setError(err instanceof Error ? err.message : "Failed to refresh insights.")
+        }
+      })
+    }
+
+    window.addEventListener("insights:invalidate", handler)
+    return () => window.removeEventListener("insights:invalidate", handler)
+  }, [fetchPage])
 
   const count = insights.length
 
@@ -25,6 +75,22 @@ export function InsightsPageClient({ initialInsights, tags, selectedTag }: Insig
   const handleDeleted = (ids: string[]) => {
     if (ids.length === 0) return
     setInsights((current) => current.filter((insight) => !ids.includes(insight.id)))
+  }
+
+  const handleLoadMore = () => {
+    if (!nextCursor || isPending) return
+
+    startTransition(async () => {
+      try {
+        setError(null)
+        const data = await fetchPage(nextCursor)
+        setInsights((current) => [...current, ...data.items])
+        setNextCursor(data.nextCursor)
+      } catch (err) {
+        console.error("[v0] Load more insights error:", err)
+        setError(err instanceof Error ? err.message : "Failed to load more insights.")
+      }
+    })
   }
 
   return (
@@ -42,6 +108,21 @@ export function InsightsPageClient({ initialInsights, tags, selectedTag }: Insig
       <InsightFilters key={tagIds} tags={tags} selectedTag={selectedTag} />
 
       <InsightGrid insights={insights} availableTags={tags} onDeleted={handleDeleted} />
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {nextCursor && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleLoadMore}
+            className="px-4 py-2 text-sm font-medium rounded-full border border-border hover:bg-muted transition-colors"
+            disabled={isPending}
+          >
+            {isPending ? "Loading…" : "Load more insights"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

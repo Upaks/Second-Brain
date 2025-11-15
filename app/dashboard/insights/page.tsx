@@ -1,7 +1,9 @@
+import { Suspense } from "react"
+
 import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
-import { InsightsPageClient } from "@/components/insights/insights-page-client"
-import { getAvailableTags, getInsightsGrid } from "@/lib/data/dashboard"
+import { InsightsStreamSection } from "@/components/insights/insights-stream-section"
+import { InsightsPageSkeleton } from "@/components/insights/insights-page-skeleton"
 
 type InsightsPageSearchParams = {
   tag?: string
@@ -16,11 +18,11 @@ export default async function InsightsPage({
   const params = await searchParams
   const selectedTag = params?.tag
 
-  const [insights, tags] = await Promise.all([getInsightsGrid(user.id, selectedTag), getAvailableTags(user.id)])
-
   return (
     <DashboardShell user={user}>
-      <InsightsPageClient initialInsights={insights} tags={tags} selectedTag={selectedTag} />
+      <Suspense fallback={<InsightsPageSkeleton />}>
+        <InsightsStreamSection userId={user.id} selectedTag={selectedTag} />
+      </Suspense>
     </DashboardShell>
   )
 }

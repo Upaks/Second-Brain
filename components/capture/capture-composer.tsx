@@ -7,17 +7,26 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { FileText, ImageIcon, Mic, Sparkles } from "lucide-react"
-import { useRouter } from "next/navigation"
 
-interface CaptureComposerProps {
-  userId: string
-}
-
-export function CaptureComposer({ userId }: CaptureComposerProps) {
-  const router = useRouter()
+export function CaptureComposer() {
   const [content, setContent] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [status, setStatus] = useState<string>("")
+
+  const invalidateInsights = useCallback(async () => {
+    try {
+      await fetch("/api/insights/revalidate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    } catch (error) {
+      console.error("[v0] Failed to trigger insights revalidation:", error)
+    } finally {
+      window.dispatchEvent(new Event("insights:invalidate"))
+    }
+  }, [])
 
   const waitForIngest = useCallback(
     async (ingestItemId: string) => {
@@ -43,7 +52,7 @@ export function CaptureComposer({ userId }: CaptureComposerProps) {
           if (item.status === "DONE") {
             setStatus("Syncing insights…")
             await new Promise((resolve) => setTimeout(resolve, 350))
-            router.refresh()
+            await invalidateInsights()
             setStatus("")
             return
           }
@@ -62,7 +71,7 @@ export function CaptureComposer({ userId }: CaptureComposerProps) {
 
       throw new Error("Timed out waiting for ingest")
     },
-    [router],
+    [invalidateInsights],
   )
 
   async function handleSubmit(e: React.FormEvent) {
@@ -92,7 +101,7 @@ export function CaptureComposer({ userId }: CaptureComposerProps) {
 
       if (data.status === "COMPLETED") {
         setStatus("Syncing insights…")
-        router.refresh()
+        await invalidateInsights()
         setStatus("")
         setContent("")
         return
@@ -132,7 +141,7 @@ export function CaptureComposer({ userId }: CaptureComposerProps) {
 
       if (data.status === "COMPLETED") {
         setStatus("Syncing insights…")
-        router.refresh()
+        await invalidateInsights()
         setStatus("")
         return
       }

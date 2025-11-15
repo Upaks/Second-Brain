@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import { Empty, EmptyIcon, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { InsightCardExpanded } from "./insight-card-expanded"
 import { Lightbulb } from "lucide-react"
@@ -11,19 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-export type InsightGridItem = {
-  id: string
-  title: string
-  takeaway: string
-  summaryPreview: string[]
-  createdAt: Date
-  tags: { tag: { id: string; name: string } }[]
-  reminders: { id: string; dueAt: Date }[]
-  linkCount: number
-}
-
-export type AvailableTag = { id: string; name: string }
+import type { InsightGridItem, AvailableTag } from "@/types/insights"
 
 interface InsightGridProps {
   insights: InsightGridItem[]
@@ -43,7 +30,6 @@ function normalizeTags(input: string) {
 }
 
 export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridProps) {
-  const router = useRouter()
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
@@ -52,6 +38,21 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const emitInvalidateEvent = () => window.dispatchEvent(new Event("insights:invalidate"))
+  const revalidateServerData = async () => {
+    try {
+      await fetch("/api/insights/revalidate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    } catch (error) {
+      console.error("[v0] Failed to revalidate insights:", error)
+    } finally {
+      emitInvalidateEvent()
+    }
+  }
 
   const selectedCount = selectedIds.length
   const normalizedTagInput = useMemo(() => normalizeTags(tagInput), [tagInput])
@@ -108,7 +109,7 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
       onDeleted?.(selectedIds)
       setSelectedIds([])
       setIsSelecting(false)
-      router.refresh()
+      await revalidateServerData()
     } catch (err) {
       console.error("[v0] Bulk delete error:", err)
       alert(err instanceof Error ? err.message : "Failed to delete insights.")
@@ -154,7 +155,7 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
         setTagInput("")
         setSelectedIds([])
         setIsSelecting(false)
-        router.refresh()
+        await revalidateServerData()
       } catch (err) {
         console.error("[v0] Bulk tag update error:", err)
         setError(err instanceof Error ? err.message : "Failed to update tags")

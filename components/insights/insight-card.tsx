@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Bell } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
-import type { InsightListItem } from "./insight-list"
+import type { InsightListItem } from "@/types/insights"
 
 interface InsightCardProps {
   insight: InsightListItem

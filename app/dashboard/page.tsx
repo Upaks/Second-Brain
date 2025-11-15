@@ -19,7 +19,7 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <CaptureComposer userId={user.id} />
+        <CaptureComposer />
 
         <div className="pt-8">
           <h2 className="text-2xl font-semibold mb-6">Recent Insights</h2>

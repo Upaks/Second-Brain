@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { revalidateInsights } from "@/lib/cache/tags"
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       }),
     ])
 
+    revalidateInsights(user.id)
     return NextResponse.json({ success: true, deleted: ownedIds.length })
   } catch (error) {
     console.error("[v0] Bulk delete insights error:", error)
