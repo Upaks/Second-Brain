@@ -2,21 +2,28 @@ import { cache } from "react"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 
-import { prisma } from "./db"
 import { authOptions } from "./auth"
 
-export const getCurrentUser = cache(async () => {
+export type CurrentUser = {
+  id: string
+  email: string
+  name: string | null
+  image: string | null
+}
+
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user?.email) {
+  if (!session?.user?.email || !session.user.id) {
     return null
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  })
-
-  return user
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name ?? null,
+    image: session.user.image ?? null,
+  }
 })
 
 export async function requireCurrentUser() {

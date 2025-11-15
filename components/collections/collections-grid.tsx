@@ -1,18 +1,18 @@
 import { Empty, EmptyIcon, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { CollectionCard } from "./collection-card"
 import { Folder } from "lucide-react"
-import type { Collection, CollectionOnInsight, Insight, Tag, InsightTag } from "@prisma/client"
 
-interface CollectionWithInsights extends Collection {
-  insights: (CollectionOnInsight & {
-    insight: Insight & {
-      tags: (InsightTag & { tag: Tag })[]
-    }
-  })[]
+type CollectionSummary = {
+  id: string
+  name: string
+  description: string | null
+  color: string | null
+  updatedAt: Date
+  insightCount: number
 }
 
 interface CollectionsGridProps {
-  collections: CollectionWithInsights[]
+  collections: CollectionSummary[]
 }
 
 export function CollectionsGrid({ collections }: CollectionsGridProps) {

@@ -2,16 +2,17 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Folder, FileText } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import type { Collection, CollectionOnInsight, Insight } from "@prisma/client"
-
-interface CollectionWithInsights extends Collection {
-  insights: (CollectionOnInsight & {
-    insight: Insight
-  })[]
+type CollectionSummary = {
+  id: string
+  name: string
+  description: string | null
+  color: string | null
+  updatedAt: Date
+  insightCount: number
 }
 
 interface CollectionCardProps {
-  collection: CollectionWithInsights
+  collection: CollectionSummary
 }
 
 export function CollectionCard({ collection }: CollectionCardProps) {
@@ -37,7 +38,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
           <div className="flex items-center justify-between pt-3 border-t mt-auto">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <FileText className="h-4 w-4" />
-              {collection.insights.length} {collection.insights.length === 1 ? "insight" : "insights"}
+              {collection.insightCount} {collection.insightCount === 1 ? "insight" : "insights"}
             </div>
 
             <div className="text-xs text-muted-foreground">

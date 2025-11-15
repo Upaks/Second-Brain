@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogOut, Menu, UserIcon } from "lucide-react"
-import type { User } from "@prisma/client"
+import type { CurrentUser } from "@/lib/session"
 
 interface TopBarProps {
-  user: User
+  user: CurrentUser
   onToggleSidebar?: () => void
 }
 

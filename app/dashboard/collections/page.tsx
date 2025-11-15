@@ -2,30 +2,12 @@ import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { CollectionsGrid } from "@/components/collections/collections-grid"
 import { CreateCollectionButton } from "@/components/collections/create-collection-button"
-import { prisma } from "@/lib/db"
+import { getCollectionsOverview } from "@/lib/data/dashboard"
 
 export default async function CollectionsPage() {
   const user = await requireCurrentUser()
 
-  const collections = await prisma.collection.findMany({
-    where: { userId: user.id },
-    include: {
-      insights: {
-        include: {
-          insight: {
-            include: {
-              tags: {
-                include: {
-                  tag: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    orderBy: { updatedAt: "desc" },
-  })
+  const collections = await getCollectionsOverview(user.id)
 
   return (
     <DashboardShell user={user}>

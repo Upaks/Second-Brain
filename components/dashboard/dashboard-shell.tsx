@@ -3,12 +3,12 @@
 import { useState, type ReactNode } from "react"
 import { Sidebar, SidebarContent } from "./sidebar"
 import { TopBar } from "./top-bar"
-import type { User } from "@prisma/client"
+import type { CurrentUser } from "@/lib/session"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 
 interface DashboardShellProps {
   children: ReactNode
-  user: User
+  user: CurrentUser
 }
 
 export function DashboardShell({ children, user }: DashboardShellProps) {
