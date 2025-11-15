@@ -1,17 +1,11 @@
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Bell } from "lucide-react"
-import type { Insight, Tag, InsightTag, IngestItem, Reminder } from "@prisma/client"
 import { formatDistanceToNow, format } from "date-fns"
-
-interface InsightWithTags extends Insight {
-  tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  reminders: Reminder[]
-}
+import type { InsightListItem } from "./insight-list"
 
 interface InsightCardProps {
-  insight: InsightWithTags
+  insight: InsightListItem
 }
 
 export function InsightCard({ insight }: InsightCardProps) {

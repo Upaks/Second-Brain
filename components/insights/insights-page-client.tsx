@@ -1,19 +1,18 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import type { Tag } from "@prisma/client"
 
 import { InsightFilters } from "./insight-filters"
-import { InsightGrid, type InsightWithRelations } from "./insight-grid"
+import { InsightGrid, type InsightGridItem, type AvailableTag } from "./insight-grid"
 
 interface InsightsPageClientProps {
-  initialInsights: InsightWithRelations[]
-  tags: Tag[]
+  initialInsights: InsightGridItem[]
+  tags: AvailableTag[]
   selectedTag?: string
 }
 
 export function InsightsPageClient({ initialInsights, tags, selectedTag }: InsightsPageClientProps) {
-  const [insights, setInsights] = useState<InsightWithRelations[]>(initialInsights)
+  const [insights, setInsights] = useState<InsightGridItem[]>(initialInsights)
 
   useEffect(() => {
     setInsights(initialInsights)

@@ -1,23 +1,35 @@
 import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { CaptureComposer } from "@/components/capture/capture-composer"
-import { InsightList } from "@/components/insights/insight-list"
+import { InsightList, type InsightListItem } from "@/components/insights/insight-list"
 import { prisma } from "@/lib/db"
 
 export default async function DashboardPage() {
   const user = await requireCurrentUser()
 
-  // Fetch recent insights
+  // Fetch a lightweight set of recent insights for the cards
   const insights = await prisma.insight.findMany({
     where: { userId: user.id },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      takeaway: true,
+      createdAt: true,
       tags: {
-        include: {
-          tag: true,
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
-      ingestItem: true,
       reminders: {
+        select: {
+          id: true,
+          dueAt: true,
+        },
         where: {
           sentAt: null,
         },
@@ -28,8 +40,13 @@ export default async function DashboardPage() {
       },
     },
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: 9,
   })
+
+  const formattedInsights: InsightListItem[] = insights.map((insight) => ({
+    ...insight,
+    reminders: insight.reminders ?? [],
+  }))
 
   return (
     <DashboardShell user={user}>
@@ -45,7 +62,7 @@ export default async function DashboardPage() {
 
         <div className="pt-8">
           <h2 className="text-2xl font-semibold mb-6">Recent Insights</h2>
-          <InsightList insights={insights} />
+          <InsightList insights={formattedInsights} />
         </div>
       </div>
     </DashboardShell>

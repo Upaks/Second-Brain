@@ -11,22 +11,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { Insight, Tag, InsightTag, IngestItem, InsightLink, Reminder } from "@prisma/client"
 
-export interface InsightWithRelations extends Insight {
-  tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  linksTo: (InsightLink & {
-    to: Insight & {
-      tags: (InsightTag & { tag: Tag })[]
-    }
-  })[]
-  reminders: Reminder[]
+export type InsightGridItem = {
+  id: string
+  title: string
+  takeaway: string
+  summaryPreview: string[]
+  createdAt: Date
+  tags: { tag: { id: string; name: string } }[]
+  reminders: { id: string; dueAt: Date }[]
+  linkCount: number
 }
 
+export type AvailableTag = { id: string; name: string }
+
 interface InsightGridProps {
-  insights: InsightWithRelations[]
-  availableTags: Tag[]
+  insights: InsightGridItem[]
+  availableTags: AvailableTag[]
   onDeleted?: (ids: string[]) => void
 }
 

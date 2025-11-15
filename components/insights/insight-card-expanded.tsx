@@ -2,22 +2,11 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Link2, Bell } from "lucide-react"
-import type { Insight, Tag, InsightTag, IngestItem, InsightLink, Reminder } from "@prisma/client"
 import { formatDistanceToNow, format } from "date-fns"
-
-interface InsightWithRelations extends Insight {
-  tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  linksTo: (InsightLink & {
-    to: Insight & {
-      tags: (InsightTag & { tag: Tag })[]
-    }
-  })[]
-  reminders: Reminder[]
-}
+import type { InsightGridItem } from "./insight-grid"
 
 interface InsightCardExpandedProps {
-  insight: InsightWithRelations
+  insight: InsightGridItem
   disableLink?: boolean
 }
 
@@ -38,17 +27,14 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
 
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{insight.takeaway}</p>
 
-          {insight.summary && (
+          {insight.summaryPreview.length > 0 && (
             <div className="space-y-2">
-              {insight.summary
-                .split("\n")
-                .slice(0, 3)
-                .map((bullet, i) => (
-                  <div key={i} className="flex gap-2 text-sm text-muted-foreground">
-                    <span className="text-primary mt-1">•</span>
-                    <span className="line-clamp-1">{bullet}</span>
-                  </div>
-                ))}
+              {insight.summaryPreview.map((bullet, i) => (
+                <div key={i} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="text-primary mt-1">•</span>
+                  <span className="line-clamp-1">{bullet}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -82,10 +68,10 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
               </div>
             )}
 
-            {insight.linksTo.length > 0 && (
+            {insight.linkCount > 0 && (
               <div className="flex items-center gap-1">
                 <Link2 className="h-3 w-3" />
-                {insight.linksTo.length} linked
+                {insight.linkCount} linked
               </div>
             )}
           </div>

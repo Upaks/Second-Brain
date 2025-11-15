@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 
 import type { FlashcardDeckData } from "@/lib/flashcards-server"
@@ -24,14 +24,8 @@ export function ShareDeckClient({ deck }: ShareDeckClientProps) {
   const [difficultyFilter, setDifficultyFilter] = useState<"all" | "foundation" | "intermediate" | "challenge">("all")
   const [cardTypeFilter, setCardTypeFilter] = useState<"all" | "core" | "detail" | "tag">("all")
   const [tagFilter, setTagFilter] = useState<string | "all">("all")
-  const [shareUrl, setShareUrl] = useState("")
+  const [shareUrl] = useState(() => (typeof window !== "undefined" ? window.location.href : ""))
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle")
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setShareUrl(window.location.href)
-    }
-  }, [])
 
   const cardCountLabel = useMemo(() => {
     const count = deck.flashcards.length

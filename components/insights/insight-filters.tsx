@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, X } from "lucide-react"
-import type { Tag } from "@prisma/client"
+import type { AvailableTag } from "./insight-grid"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
 const VISIBLE_TAG_COUNT = 8
 
 interface InsightFiltersProps {
-  tags: Tag[]
+  tags: AvailableTag[]
   selectedTag?: string
 }
 

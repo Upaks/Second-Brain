@@ -1,16 +1,18 @@
 import { Empty, EmptyIcon, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { InsightCard } from "./insight-card"
 import { Lightbulb } from "lucide-react"
-import type { Insight, Tag, InsightTag, IngestItem, Reminder } from "@prisma/client"
 
-interface InsightWithTags extends Insight {
-  tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  reminders: Reminder[]
+export type InsightListItem = {
+  id: string
+  title: string
+  takeaway: string
+  createdAt: Date
+  tags: { tag: { id: string; name: string } }[]
+  reminders: { id: string; dueAt: Date }[]
 }
 
 interface InsightListProps {
-  insights: InsightWithTags[]
+  insights: InsightListItem[]
 }
 
 export function InsightList({ insights }: InsightListProps) {
