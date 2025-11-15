@@ -32,7 +32,7 @@ export type InsightForFlashcard = Insight & {
   tags: (InsightTag & {
     tag: Tag
   })[]
-  ingestItem?: IngestItem | null
+  ingestItem?: Pick<IngestItem, "type" | "meta" | "mime"> | null
 }
 
 function normaliseSummary(summary?: string | null) {

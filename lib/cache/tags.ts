@@ -12,6 +12,7 @@ export const cacheTags = {
   dashboardRecent: (userId: string) => dashboardTagBase(userId, "recent"),
   dashboardCollections: (userId: string) => dashboardTagBase(userId, "collections"),
   dashboardTags: (userId: string) => dashboardTagBase(userId, "tags"),
+  flashcards: (userId: string) => `flashcards:${userId}`,
 }
 
 export function revalidateInsights(userId: string, tag?: string) {
@@ -28,5 +29,9 @@ export function revalidateCollections(userId: string) {
 
 export function revalidateTags(userId: string) {
   revalidateTag(cacheTags.dashboardTags(userId), PROFILE)
+}
+
+export function revalidateFlashcards(userId: string) {
+  revalidateTag(cacheTags.flashcards(userId), PROFILE)
 }
 

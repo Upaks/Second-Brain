@@ -1,4 +1,8 @@
+import { Prisma } from "@prisma/client"
+import { unstable_cache } from "next/cache"
+
 import { prisma } from "@/lib/db"
+import { cacheTags } from "@/lib/cache/tags"
 import { buildFlashcardsFromInsight, type InsightForFlashcard, type Flashcard } from "./flashcards"
 
 export interface FlashcardDeckData {
@@ -26,35 +30,53 @@ function cloneCards(cards: Flashcard[]): Flashcard[] {
   }))
 }
 
-export async function getFlashcardDecksForUser(userId: string): Promise<FlashcardDeckData[]> {
+const flashcardInsightSelect = Prisma.validator<Prisma.InsightSelect>()({
+  id: true,
+  title: true,
+  summary: true,
+  takeaway: true,
+  content: true,
+  createdAt: true,
+  tags: {
+    select: {
+      tag: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
+  ingestItem: {
+    select: {
+      type: true,
+      meta: true,
+      mime: true,
+    },
+  },
+})
+
+const flashcardCollectionSelect = Prisma.validator<Prisma.CollectionSelect>()({
+  id: true,
+  name: true,
+  description: true,
+  insights: {
+    select: {
+      insightId: true,
+    },
+  },
+})
+
+async function buildFlashcardDecks(userId: string) {
   const [insights, collections] = await Promise.all([
     prisma.insight.findMany({
       where: { userId },
-      include: {
-        tags: {
-          include: { tag: true },
-        },
-        ingestItem: true,
-      },
+      select: flashcardInsightSelect,
       orderBy: { createdAt: "desc" },
       take: 200,
     }),
     prisma.collection.findMany({
       where: { userId },
-      include: {
-        insights: {
-          include: {
-            insight: {
-              include: {
-                tags: {
-                  include: { tag: true },
-                },
-                ingestItem: true,
-              },
-            },
-          },
-        },
-      },
+      select: flashcardCollectionSelect,
       orderBy: { createdAt: "desc" },
     }),
   ])
@@ -111,7 +133,7 @@ export async function getFlashcardDecksForUser(userId: string): Promise<Flashcar
     .sort((a, b) => b.flashcards.length - a.flashcards.length || a.name.localeCompare(b.name))
 
   const collectionDecks: FlashcardDeckData[] = collections.map((collection) => {
-    const collectionInsights = collection.insights.map((i) => i.insight?.id).filter(Boolean) as string[]
+    const collectionInsights = collection.insights.map((i) => i.insightId).filter(Boolean)
     const cards = collectionInsights.flatMap((insightId) => cardsByInsight.get(insightId) ?? [])
 
     return {
@@ -123,6 +145,14 @@ export async function getFlashcardDecksForUser(userId: string): Promise<Flashcar
   }).filter((deck) => deck.flashcards.length > 0)
 
   return [allDeck, ...topicDecks, ...collectionDecks].filter((deck) => deck.flashcards.length > 0)
+}
+
+export async function getFlashcardDecksForUser(userId: string): Promise<FlashcardDeckData[]> {
+  return unstable_cache(
+    () => buildFlashcardDecks(userId),
+    ["flashcard-decks", userId],
+    { tags: [cacheTags.flashcards(userId)] },
+  )()
 }
 
 export async function getDeckById(userId: string, deckId: string): Promise<FlashcardDeckData | null> {

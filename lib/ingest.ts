@@ -7,6 +7,7 @@ import JSZip from "jszip"
 import { XMLParser } from "fast-xml-parser"
 
 import { prisma } from "./db"
+import { revalidateFlashcards } from "./cache/tags"
 import { generateEmbedding } from "./ai/embed"
 import { generateStructuredInsightsFromText } from "./ai/summarize"
 import { setInsightEmbedding, upsertTagsForInsight } from "./insights"
@@ -351,6 +352,8 @@ export async function processIngestItem({ item }: ProcessOptions) {
         meta: metaUpdate,
       },
     })
+
+    revalidateFlashcards(userId)
 
     return { insightIds: processedInsightIds, ingestItemId: item.id, reused: existingInsights.length > 0 }
   } catch (error) {
