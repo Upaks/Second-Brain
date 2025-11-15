@@ -12,7 +12,7 @@ export function InsightCard({ insight }: InsightCardProps) {
   const upcomingReminder = insight.reminders?.[0]
 
   return (
-    <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
+    <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group min-w-0">
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
@@ -24,7 +24,7 @@ export function InsightCard({ insight }: InsightCardProps) {
         {insight.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {insight.tags.slice(0, 3).map(({ tag }) => (
-              <Badge key={tag.id} variant="secondary" className="text-xs">
+              <Badge key={tag.id} variant="secondary" className="text-xs whitespace-normal break-words">
                 {tag.name}
               </Badge>
             ))}

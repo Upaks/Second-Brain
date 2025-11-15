@@ -168,8 +168,8 @@ export function CaptureComposer() {
           className="min-h-[120px] text-base resize-none border-0 focus-visible:ring-0 shadow-none"
         />
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-4 pt-2 border-t sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -201,7 +201,7 @@ export function CaptureComposer() {
             </Button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             {status && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Spinner size="sm" />
@@ -209,7 +209,7 @@ export function CaptureComposer() {
               </div>
             )}
 
-            <Button type="submit" disabled={!content.trim() || isLoading} className="gap-2">
+            <Button type="submit" disabled={!content.trim() || isLoading} className="gap-2 w-full sm:w-auto">
               <Sparkles className="h-4 w-4" />
               Capture
             </Button>

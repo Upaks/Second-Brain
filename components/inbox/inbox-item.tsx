@@ -52,18 +52,18 @@ export function InboxItem({ item }: InboxItemProps) {
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2">{primaryInsight.takeaway}</p>
 
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex flex-wrap items-center gap-3 mt-3">
               {primaryInsight.tags.length > 0 && (
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1 flex-1 min-w-0">
                   {primaryInsight.tags.slice(0, 3).map(({ tag }) => (
-                    <Badge key={tag.id} variant="secondary" className="text-xs">
+                    <Badge key={tag.id} variant="secondary" className="text-xs whitespace-normal break-words">
                       {tag.name}
                     </Badge>
                   ))}
                 </div>
               )}
 
-              <span className="text-xs text-muted-foreground ml-auto">
+              <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
                 {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
               </span>
             </div>

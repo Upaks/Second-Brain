@@ -15,7 +15,7 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
 
   const card = (
     <Card
-      className={`p-6 h-full transition-all group ${
+      className={`p-6 h-full transition-all group min-w-0 ${
         disableLink ? "cursor-default" : "hover:shadow-lg hover:border-primary/50 cursor-pointer"
       }`}
     >
@@ -31,8 +31,8 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
             <div className="space-y-2">
               {insight.summaryPreview.map((bullet, index) => (
                 <div key={index} className="flex gap-2 text-sm text-muted-foreground">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="line-clamp-1">{bullet}</span>
+                  <span className="text-primary mt-1 shrink-0">•</span>
+                  <span className="line-clamp-1 break-words">{bullet}</span>
                 </div>
               ))}
             </div>
@@ -44,7 +44,7 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
             <div className="flex flex-wrap gap-2">
               {insight.tags.slice(0, 4).map(({ tag }) => {
                 return (
-                  <Badge key={tag.id} variant="secondary" className="text-xs">
+                  <Badge key={tag.id} variant="secondary" className="text-xs whitespace-normal break-words max-w-full">
                     {tag.name}
                   </Badge>
                 )
