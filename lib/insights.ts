@@ -11,15 +11,15 @@ export async function upsertTagsForInsight(userId: string, insightId: string, ta
     ),
   )
 
+  await prisma.insightTag.deleteMany({ where: { insightId } })
+
   if (normalized.length === 0) {
     return
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.insightTag.deleteMany({ where: { insightId } })
-
-    for (const name of normalized) {
-      const tag = await tx.tag.upsert({
+  const tagRecords = await Promise.all(
+    normalized.map((name) =>
+      prisma.tag.upsert({
         where: {
           userId_name: {
             userId,
@@ -31,15 +31,16 @@ export async function upsertTagsForInsight(userId: string, insightId: string, ta
           name,
         },
         update: {},
-      })
+      }),
+    ),
+  )
 
-      await tx.insightTag.create({
-        data: {
-          insightId,
-          tagId: tag.id,
-        },
-      })
-    }
+  await prisma.insightTag.createMany({
+    data: tagRecords.map((tag) => ({
+      insightId,
+      tagId: tag.id,
+    })),
+    skipDuplicates: true,
   })
 }
 

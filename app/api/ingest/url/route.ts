@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
-import { inngest } from "@/lib/inngest/client"
 import { processIngestItemById } from "@/lib/ingest"
+import { queueIngestProcessing } from "@/lib/inngest/events"
 
 export async function POST(request: NextRequest) {
   let ingestItem: Awaited<ReturnType<typeof prisma.ingestItem.create>> | null = null
@@ -30,17 +30,8 @@ export async function POST(request: NextRequest) {
         meta: { url },
       },
     })
-    let queued = false
-    try {
-      await inngest.send({
-        name: "ingest/process",
-      data: {
-        ingestItemId: ingestItem.id,
-      },
-    })
-      queued = true
-    } catch (sendError) {
-      console.error("[v0] inngest send failed, running inline", sendError)
+    const queued = await queueIngestProcessing(ingestItem.id)
+    if (!queued) {
       await processIngestItemById(ingestItem.id)
     }
 

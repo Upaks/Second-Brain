@@ -5,8 +5,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
 import { uploadToStorage } from "@/lib/storage"
-import { inngest } from "@/lib/inngest/client"
 import { processIngestItemById } from "@/lib/ingest"
+import { queueIngestProcessing } from "@/lib/inngest/events"
 
 function sanitizeFileName(name: string) {
   const trimmed = name.trim() || "file"
@@ -91,15 +91,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    let queued = false
-    try {
-      await inngest.send({
-        name: "ingest/process",
-        data: { ingestItemId: ingestItem.id },
-    })
-      queued = true
-    } catch (queueError) {
-      console.error("[v0] inngest send failed for upload, running inline", queueError)
+    const queued = await queueIngestProcessing(ingestItem.id)
+    if (!queued) {
       await processIngestItemById(ingestItem.id)
     }
 
