@@ -56,6 +56,7 @@ Create `.env.local` (Vercel-style) or `.env` with at least:
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Postgres connection string with pgvector enabled |
+| `DIRECT_DATABASE_URL` | (Optional) Direct Postgres URL for Prisma migrations |
 | `NEXTAUTH_SECRET` | 32+ char secret for NextAuth JWTs |
 | `NEXTAUTH_URL` | Base URL (needed for password reset links) |
 | `OPENAI_API_KEY` or `OPENROUTER_API_KEY` | AI provider credentials |
