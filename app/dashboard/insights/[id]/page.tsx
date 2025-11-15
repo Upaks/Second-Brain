@@ -2,8 +2,11 @@ import { notFound } from "next/navigation"
 import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { InsightDetail } from "@/components/insights/insight-detail"
+import { Suspense } from "react"
+
 import { prisma } from "@/lib/db"
-import { findRelatedInsights } from "@/lib/search"
+import { RelatedInsightsSection } from "@/components/insights/related-insights-section"
+import { RelatedInsightsSkeleton } from "@/components/insights/related-insights-skeleton"
 
 export default async function InsightPage({
   params,
@@ -67,8 +70,7 @@ export default async function InsightPage({
     },
   })
 
-  const relatedPromise = findRelatedInsights(id, user.id)
-  const [insight, related] = await Promise.all([insightPromise, relatedPromise])
+  const insight = await insightPromise
 
   if (!insight) {
     notFound()
@@ -76,7 +78,10 @@ export default async function InsightPage({
 
   return (
     <DashboardShell user={user}>
-      <InsightDetail insight={insight} userId={user.id} relatedInsights={related} />
+      <InsightDetail insight={insight} userId={user.id} />
+      <Suspense fallback={<RelatedInsightsSkeleton />}>
+        <RelatedInsightsSection insightId={insight.id} userId={user.id} />
+      </Suspense>
     </DashboardShell>
   )
 }

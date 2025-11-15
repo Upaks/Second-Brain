@@ -12,7 +12,6 @@ import { formatDistanceToNow, format } from "date-fns"
 import type { Insight, Tag, InsightTag, Reminder } from "@prisma/client"
 import { TagManager } from "./tag-manager"
 import { ReminderDialog } from "./reminder-dialog"
-import type { SearchResult } from "@/lib/search"
 
 type LinkedInsight = Pick<Insight, "id" | "title" | "takeaway">
 
@@ -28,12 +27,11 @@ interface InsightWithRelations extends InsightCoreFields {
 interface InsightDetailProps {
   insight: InsightWithRelations
   userId: string
-  relatedInsights?: SearchResult[]
 }
 
 type EditingReminder = { id: string; dueAt: string; note: string | null } | null
 
-export function InsightDetail({ insight, userId, relatedInsights = [] }: InsightDetailProps) {
+export function InsightDetail({ insight, userId }: InsightDetailProps) {
   const router = useRouter()
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false)
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false)
@@ -291,46 +289,6 @@ export function InsightDetail({ insight, userId, relatedInsights = [] }: Insight
               >
                 <h4 className="font-medium mb-2 line-clamp-2">{linked.title}</h4>
                 <p className="text-sm text-muted-foreground line-clamp-1">{linked.takeaway}</p>
-              </Link>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {relatedInsights.length > 0 && (
-        <Card className="p-6">
-          <h3 className="font-semibold flex items-center gap-2 mb-4">
-            <Link2 className="h-4 w-4" />
-            Suggested Insights ({relatedInsights.length})
-          </h3>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {relatedInsights.map((related) => (
-              <Link
-                key={related.id}
-                href={`/dashboard/insights/${related.id}`}
-                className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h4 className="font-medium mb-2 line-clamp-2">{related.title}</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{related.takeaway}</p>
-                  </div>
-                  {typeof related.similarity === "number" && (
-                    <Badge variant="outline" className="ml-auto whitespace-nowrap">
-                      Match {(related.similarity * 100).toFixed(0)}%
-                    </Badge>
-                  )}
-                </div>
-                {related.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {related.tags.slice(0, 3).map(({ tag }) => (
-                      <Badge key={tag.id} variant="secondary" className="text-xs">
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </Link>
             ))}
           </div>
