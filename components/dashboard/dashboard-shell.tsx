@@ -28,7 +28,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
         <TopBar user={user} onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)} />
 
         <main className="flex-1 overflow-y-auto">
-          <div className="flex-1 px-0 py-0">{children}</div>
+          <div className="flex-1 px-4 sm:px-6 lg:px-10 py-6">{children}</div>
         </main>
       </div>
     </div>
