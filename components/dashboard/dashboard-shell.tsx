@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react"
 import { Sidebar, SidebarContent } from "./sidebar"
 import { TopBar } from "./top-bar"
 import type { CurrentUser } from "@/lib/session"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 interface DashboardShellProps {
   children: ReactNode
@@ -20,6 +20,9 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
 
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetContent side="left" className="w-64 border-r border-border bg-card p-0 text-foreground">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation</SheetTitle>
+          </SheetHeader>
           <SidebarContent onNavigate={() => setIsSidebarOpen(false)} />
         </SheetContent>
       </Sheet>

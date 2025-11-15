@@ -13,44 +13,49 @@ export default async function InsightPage({
   const user = await requireCurrentUser()
   const { id } = await params
 
-  const insight = await prisma.insight.findUnique({
+  const insightPromise = prisma.insight.findUnique({
     where: {
       id,
       userId: user.id,
     },
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      title: true,
+      summary: true,
+      takeaway: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
       tags: {
         include: {
           tag: true,
         },
       },
       linksTo: {
-        include: {
+        take: 8,
+        select: {
           to: {
-            include: {
-              tags: {
-                include: {
-                  tag: true,
-                },
-              },
+            select: {
+              id: true,
+              title: true,
+              takeaway: true,
             },
           },
         },
       },
       linksFrom: {
-        include: {
+        take: 8,
+        select: {
           from: {
-            include: {
-              tags: {
-                include: {
-                  tag: true,
-                },
-              },
+            select: {
+              id: true,
+              title: true,
+              takeaway: true,
             },
           },
         },
       },
-      ingestItem: true,
       reminders: {
         where: {
           sentAt: null,
@@ -62,11 +67,12 @@ export default async function InsightPage({
     },
   })
 
+  const relatedPromise = findRelatedInsights(id, user.id)
+  const [insight, related] = await Promise.all([insightPromise, relatedPromise])
+
   if (!insight) {
     notFound()
   }
-
-  const related = await findRelatedInsights(insight.id, user.id)
 
   return (
     <DashboardShell user={user}>

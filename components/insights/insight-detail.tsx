@@ -9,24 +9,19 @@ import { ArrowLeft, Calendar, Clock, Link2, TagIcon, Plus, Bell, Pencil, Trash2 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow, format } from "date-fns"
-import type { Insight, Tag, InsightTag, IngestItem, InsightLink, Reminder } from "@prisma/client"
+import type { Insight, Tag, InsightTag, Reminder } from "@prisma/client"
 import { TagManager } from "./tag-manager"
 import { ReminderDialog } from "./reminder-dialog"
 import type { SearchResult } from "@/lib/search"
 
-interface InsightWithRelations extends Insight {
+type LinkedInsight = Pick<Insight, "id" | "title" | "takeaway">
+
+type InsightCoreFields = Pick<Insight, "id" | "userId" | "title" | "summary" | "takeaway" | "content" | "createdAt" | "updatedAt">
+
+interface InsightWithRelations extends InsightCoreFields {
   tags: (InsightTag & { tag: Tag })[]
-  ingestItem: IngestItem | null
-  linksTo: (InsightLink & {
-    to: Insight & {
-      tags: (InsightTag & { tag: Tag })[]
-    }
-  })[]
-  linksFrom: (InsightLink & {
-    from: Insight & {
-      tags: (InsightTag & { tag: Tag })[]
-    }
-  })[]
+  linksTo: { to: LinkedInsight }[]
+  linksFrom: { from: LinkedInsight }[]
   reminders: Reminder[]
 }
 
@@ -159,17 +154,19 @@ export function InsightDetail({ insight, userId, relatedInsights = [] }: Insight
 
           <Separator />
 
-          <div>
+          {insight.summary && (
+            <div>
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Summary</h2>
             <div className="space-y-3">
-              {insight.summary.split("\n").map((bullet, i) => (
-                <div key={i} className="flex gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <p className="text-base leading-relaxed">{bullet}</p>
-                </div>
-              ))}
+                {insight.summary.split("\n").map((bullet, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="text-primary font-bold mt-1">•</span>
+                    <p className="text-base leading-relaxed">{bullet}</p>
+                  </div>
+                ))}
             </div>
-          </div>
+            </div>
+          )}
 
           {insight.content && (
             <>
