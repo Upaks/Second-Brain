@@ -87,7 +87,7 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
       const res = await fetch(`/api/insights/${insight.id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete insight")
 
-      // Revalidate cache before navigation
+      // Revalidate cache and wait for it to complete
       try {
         await fetch("/api/insights/revalidate", {
           method: "POST",
@@ -97,9 +97,25 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
         console.error("[v0] Revalidation error:", error)
       }
 
-      // Navigate and refresh
+      // Wait for cache to clear before navigating
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Store a flag in sessionStorage to indicate we just deleted an insight
+      // This will trigger a refetch when the insights page loads
+      sessionStorage.setItem("insights:needsRefresh", "true")
+      sessionStorage.setItem("insights:deletedId", insight.id)
+
+      // Navigate to insights list
       router.push("/dashboard/insights")
+      
+      // Also refresh server components
       router.refresh()
+      
+      // Trigger client-side refresh immediately and also after a delay as backup
+      window.dispatchEvent(new Event("insights:invalidate"))
+      setTimeout(() => {
+        window.dispatchEvent(new Event("insights:invalidate"))
+      }, 500)
     } catch (error) {
       console.error("[v0] Delete insight error:", error)
       alert("Failed to delete this insight. Please try again.")

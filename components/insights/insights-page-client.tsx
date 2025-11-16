@@ -49,10 +49,40 @@ export function InsightsPageClient({ initialInsights, initialCursor, tags, selec
     [selectedTag],
   )
 
+  // Check on mount if we need to refresh (e.g., after a deletion)
   useEffect(() => {
-    setInsights(initialInsights)
-    setNextCursor(initialCursor)
-    setError(null)
+    const needsRefresh = sessionStorage.getItem("insights:needsRefresh")
+    if (needsRefresh === "true") {
+      sessionStorage.removeItem("insights:needsRefresh")
+      sessionStorage.removeItem("insights:deletedId")
+      // Immediately refetch fresh data
+      startTransition(async () => {
+        try {
+          setError(null)
+          const data = await fetchPage()
+          setInsights(data.items)
+          setNextCursor(data.nextCursor)
+        } catch (err) {
+          console.error("[v0] Refresh insights error:", err)
+          setError(err instanceof Error ? err.message : "Failed to refresh insights.")
+        }
+      })
+    } else {
+      // Only sync initialInsights if we don't need a refresh
+      setInsights(initialInsights)
+      setNextCursor(initialCursor)
+      setError(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount - fetchPage is stable from useCallback
+
+  // Sync initialInsights when they change (but not on initial mount if we're refreshing)
+  useEffect(() => {
+    const needsRefresh = sessionStorage.getItem("insights:needsRefresh")
+    if (needsRefresh !== "true") {
+      setInsights(initialInsights)
+      setNextCursor(initialCursor)
+    }
   }, [initialInsights, initialCursor])
 
   useEffect(() => {

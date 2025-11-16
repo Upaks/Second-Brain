@@ -30,8 +30,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // If no insights found, return success anyway (they may have already been deleted)
+    // This prevents errors when trying to delete items that no longer exist
     if (ownedInsights.length === 0) {
-      return NextResponse.json({ error: "No insights found" }, { status: 404 })
+      revalidateInsights(user.id)
+      return NextResponse.json({ success: true, deleted: 0, message: "No insights found to delete" })
     }
 
     const ownedIds = ownedInsights.map((insight) => insight.id)

@@ -104,7 +104,12 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? "Failed to delete insights")
+        // If it's a 404 with "No insights found", treat it as success (items already deleted)
+        if (res.status === 404 && body.message?.includes("No insights found")) {
+          // Continue with the deletion flow as if it succeeded
+        } else {
+          throw new Error(body.error ?? "Failed to delete insights")
+        }
       }
 
       // Clear selection first
