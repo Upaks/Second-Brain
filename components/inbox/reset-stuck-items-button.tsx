@@ -49,7 +49,7 @@ export function ResetStuckItemsButton() {
       disabled={isResetting}
       variant="outline"
       size="sm"
-      className="gap-2"
+      className="gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/40"
     >
       {isResetting ? (
         <>

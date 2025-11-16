@@ -142,15 +142,15 @@ export function ReminderDialog({ insightId, open, onOpenChange, onUpdate, remind
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-slate-900/95 backdrop-blur-xl border-white/20">
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
+          <DialogTitle className="text-white">{dialogTitle}</DialogTitle>
+          <DialogDescription className="text-white/60">{dialogDescription}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Quick pick</Label>
+            <Label className="text-white/90">Quick pick</Label>
             <div className="flex flex-wrap gap-2">
               {quickOptions.map((option) => (
                 <Button
@@ -160,6 +160,7 @@ export function ReminderDialog({ insightId, open, onOpenChange, onUpdate, remind
                   size="sm"
                   disabled={isLoading}
                   onClick={() => applyQuickOption(option.compute)}
+                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
                 >
                   {option.label}
                 </Button>
@@ -168,7 +169,7 @@ export function ReminderDialog({ insightId, open, onOpenChange, onUpdate, remind
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dueAt">When</Label>
+            <Label htmlFor="dueAt" className="text-white/90">When</Label>
             <Input
               id="dueAt"
               type="datetime-local"
@@ -176,11 +177,12 @@ export function ReminderDialog({ insightId, open, onOpenChange, onUpdate, remind
               onChange={(e) => setDueAt(e.target.value)}
               required
               disabled={isLoading}
+              className="bg-white/5 border-white/20 text-white focus:border-purple-500/50 focus:ring-purple-500/20"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="note">Note (optional)</Label>
+            <Label htmlFor="note" className="text-white/90">Note (optional)</Label>
             <Textarea
               id="note"
               placeholder="Why remind me about this?"
@@ -188,11 +190,16 @@ export function ReminderDialog({ insightId, open, onOpenChange, onUpdate, remind
               onChange={(e) => setNote(e.target.value)}
               disabled={isLoading}
               rows={3}
+              className="bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-500/50 focus:ring-purple-500/20"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Button type="submit" className="w-full" disabled={isLoading || !dueAt}>
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all" 
+              disabled={isLoading || !dueAt}
+            >
               {isLoading ? (
                 <>
                   <Spinner size="sm" className="mr-2" />
@@ -210,7 +217,7 @@ export function ReminderDialog({ insightId, open, onOpenChange, onUpdate, remind
                 variant="outline"
                 disabled={isLoading}
                 onClick={handleDelete}
-                className="w-full"
+                className="w-full bg-white/10 text-red-400 border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50"
               >
                 Remove Reminder
               </Button>

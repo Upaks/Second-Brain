@@ -96,19 +96,19 @@ export function SearchInterface({ userId }: SearchInterfaceProps) {
           results.length > 0 ? (
             <SearchResults results={results} query={query} />
           ) : (
-            <Empty>
-              <EmptyIcon>
-                <Search className="h-8 w-8 text-white/40" />
-              </EmptyIcon>
+            <Empty className="border-white/20 bg-slate-900/50">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 mb-4">
+                <Search className="h-12 w-12 text-purple-400" />
+              </div>
               <EmptyTitle className="text-white">No results found</EmptyTitle>
               <EmptyDescription className="text-white/60">Try adjusting your search query or create a new insight</EmptyDescription>
             </Empty>
           )
         ) : (
-          <Empty>
-            <EmptyIcon>
-              <Sparkles className="h-8 w-8 text-white/40" />
-            </EmptyIcon>
+          <Empty className="border-white/20 bg-slate-900/50">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 mb-4">
+              <Sparkles className="h-12 w-12 text-purple-400" />
+            </div>
             <EmptyTitle className="text-white">Semantic Search</EmptyTitle>
             <EmptyDescription className="text-white/60">Search naturally — ask questions, describe concepts, or use keywords</EmptyDescription>
             <div className="mt-6 space-y-2 text-left max-w-md">

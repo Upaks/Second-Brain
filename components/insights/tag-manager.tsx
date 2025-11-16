@@ -65,10 +65,10 @@ export function TagManager({ insightId, currentTags, open, onOpenChange, onUpdat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-slate-900/95 backdrop-blur-xl border-white/20">
         <DialogHeader>
-          <DialogTitle>Manage Tags</DialogTitle>
-          <DialogDescription>Add or remove tags to organize this insight</DialogDescription>
+          <DialogTitle className="text-white">Manage Tags</DialogTitle>
+          <DialogDescription className="text-white/60">Add or remove tags to organize this insight</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -79,17 +79,26 @@ export function TagManager({ insightId, currentTags, open, onOpenChange, onUpdat
               onChange={(e) => setNewTag(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
               disabled={isLoading}
+              className="bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-500/50 focus:ring-purple-500/20"
             />
-            <Button onClick={handleAddTag} disabled={isLoading || !newTag.trim()}>
+            <Button 
+              onClick={handleAddTag} 
+              disabled={isLoading || !newTag.trim()}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {currentTags.map((tag) => (
-              <Badge key={tag.id} variant="secondary" className="gap-2">
+              <Badge key={tag.id} variant="secondary" className="gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20">
                 {tag.name}
-                <button onClick={() => handleRemoveTag(tag.id)} disabled={isLoading} className="hover:text-destructive">
+                <button 
+                  onClick={() => handleRemoveTag(tag.id)} 
+                  disabled={isLoading} 
+                  className="hover:text-red-400 transition-colors"
+                >
                   <X className="h-3 w-3" />
                 </button>
               </Badge>

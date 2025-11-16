@@ -104,12 +104,7 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        // If it's a 404 with "No insights found", treat it as success (items already deleted)
-        if (res.status === 404 && body.message?.includes("No insights found")) {
-          // Continue with the deletion flow as if it succeeded
-        } else {
-          throw new Error(body.error ?? "Failed to delete insights")
-        }
+        throw new Error(body.error ?? "Failed to delete insights")
       }
 
       // Clear selection first
@@ -205,7 +200,7 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-white/70">
           {isSelecting
             ? selectedCount > 0
               ? `${selectedCount} selected`
@@ -214,24 +209,30 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
         </div>
         <div className="flex items-center gap-2">
           {isSelecting && (
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
+            <Button variant="ghost" size="sm" onClick={clearSelection} className="text-white/70 hover:text-white hover:bg-white/10">
               Cancel
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={toggleSelecting}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={toggleSelecting}
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/40"
+          >
             {isSelecting ? "Done" : "Select"}
           </Button>
         </div>
       </div>
 
       {selectedCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-          <span className="text-sm font-medium">{selectedCount} insights selected</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 px-4 py-3">
+          <span className="text-sm font-medium text-white">{selectedCount} insights selected</span>
           <Button
             size="sm"
             variant="secondary"
             onClick={() => openTagDialog("add")}
             disabled={isPending || isBulkDeleting}
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20"
           >
             Add tags
           </Button>
@@ -240,6 +241,7 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
             variant="secondary"
             onClick={() => openTagDialog("remove")}
             disabled={isPending || isBulkDeleting}
+            className="bg-white/10 text-white border-white/20 hover:bg-white/20"
           >
             Remove tags
           </Button>
@@ -248,10 +250,17 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
             variant="destructive"
             onClick={handleBulkDelete}
             disabled={isPending || isBulkDeleting}
+            className="bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30 hover:border-red-500/50"
           >
             {isBulkDeleting ? "Deleting..." : "Delete"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={clearSelection} disabled={isPending || isBulkDeleting}>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={clearSelection} 
+            disabled={isPending || isBulkDeleting}
+            className="text-white/70 hover:text-white hover:bg-white/10"
+          >
             Clear selection
           </Button>
         </div>

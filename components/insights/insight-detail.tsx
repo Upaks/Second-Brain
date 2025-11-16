@@ -133,7 +133,7 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className="text-white/70 hover:text-white hover:bg-white/10">
             <Link href="/dashboard/insights">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Insights
@@ -145,16 +145,16 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
             size="sm"
             onClick={handleDeleteInsight}
             disabled={isDeletingInsight}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30 hover:border-red-500/50"
           >
             <Trash2 className="h-4 w-4" />
             {isDeletingInsight ? "Deleting…" : "Delete"}
           </Button>
         </div>
 
-        <h1 className="text-4xl font-bold">{insight.title}</h1>
+        <h1 className="text-4xl sm:text-5xl font-black text-white">{insight.title}</h1>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 text-sm text-white/60">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             {format(new Date(insight.createdAt), "MMM d, yyyy")}
@@ -168,7 +168,7 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
         </div>
 
       {nextReminder && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm text-primary">
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 px-4 py-2 text-sm text-purple-300">
           <Bell className="h-4 w-4" />
           <div>
             Next reminder scheduled for {format(new Date(nextReminder.dueAt), "MMM d, yyyy h:mm a")}
@@ -178,23 +178,23 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
       )}
       </div>
 
-      <Card className="p-8">
+      <Card className="p-8 border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm">
         <div className="space-y-6">
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Key Takeaway</h2>
-            <p className="text-xl font-medium leading-relaxed">{insight.takeaway}</p>
+            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-3">Key Takeaway</h2>
+            <p className="text-xl font-medium leading-relaxed text-white">{insight.takeaway}</p>
           </div>
 
-          <Separator />
+          <Separator className="bg-white/10" />
 
           {insight.summary && (
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Summary</h2>
+            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-4">Summary</h2>
             <div className="space-y-3">
               {insight.summary.split("\n").map((bullet, i) => (
                 <div key={i} className="flex gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <p className="text-base leading-relaxed">{bullet}</p>
+                  <span className="text-purple-400 font-bold mt-1">•</span>
+                  <p className="text-base leading-relaxed text-white/90">{bullet}</p>
                 </div>
               ))}
             </div>
@@ -203,12 +203,12 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
 
           {insight.content && (
             <>
-              <Separator />
+              <Separator className="bg-white/10" />
               <div>
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-4">
                   Full Content
                 </h2>
-                <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-wrap">{insight.content}</p>
+                <p className="text-base leading-relaxed text-white/70 whitespace-pre-wrap">{insight.content}</p>
               </div>
             </>
           )}
@@ -216,13 +216,18 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
       </Card>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold flex items-center gap-2">
-              <TagIcon className="h-4 w-4" />
+        <Card className="p-6 border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold flex items-center gap-2 text-white">
+              <TagIcon className="h-5 w-5 text-purple-400" />
               Tags
             </h3>
-            <Button variant="ghost" size="sm" onClick={() => setIsTagManagerOpen(true)}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsTagManagerOpen(true)}
+              className="text-white/70 hover:text-white hover:bg-white/10"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -230,23 +235,28 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
           {insight.tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {insight.tags.map(({ tag }) => (
-                <Badge key={tag.id} variant="secondary">
+                <Badge key={tag.id} variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
                   {tag.name}
                 </Badge>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No tags yet</p>
+            <p className="text-sm text-white/60">No tags yet. Click + to add tags.</p>
           )}
         </Card>
 
-        <Card className="p-6 space-y-3">
+        <Card className="p-6 border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm space-y-4">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Bell className="h-4 w-4" />
+            <h3 className="font-semibold flex items-center gap-2 text-white">
+              <Bell className="h-5 w-5 text-purple-400" />
               Reminders
             </h3>
-            <Button variant="ghost" size="sm" onClick={openNewReminder}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={openNewReminder}
+              className="text-white/70 hover:text-white hover:bg-white/10"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -259,24 +269,24 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
                 const isDeleting = pendingDeleteId === reminder.id
 
                 return (
-                  <div key={reminder.id} className="rounded-md border border-border/60 bg-muted/20 px-3 py-3 text-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 font-medium">
-                          <Bell className="h-4 w-4 text-primary" />
+                  <div key={reminder.id} className="rounded-xl border-2 border-white/20 bg-slate-800/50 hover:bg-slate-800/70 hover:border-white/40 px-4 py-4 text-sm transition-all">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2 font-semibold text-white">
+                          <Bell className="h-4 w-4 text-purple-400" />
                           {format(dueDate, "MMM d, yyyy h:mm a")}
                           {isOverdue && (
-                            <Badge variant="outline" className="border-amber-400 text-amber-500">
+                            <Badge variant="outline" className="border-amber-400/50 text-amber-300 bg-amber-500/20">
                               Overdue
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-white/60">
                           {isMounted
                             ? formatDistanceToNow(dueDate, { addSuffix: true })
                             : format(dueDate, "MMM d, yyyy h:mm a")}
                         </div>
-                        {reminder.note && <p className="text-sm text-muted-foreground">{reminder.note}</p>}
+                        {reminder.note && <p className="text-sm text-white/70 mt-2">{reminder.note}</p>}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -284,6 +294,7 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
                           variant="outline"
                           onClick={() => openEditReminder(reminder)}
                           disabled={isDeleting}
+                          className="bg-white/10 text-white border-white/20 hover:bg-white/20"
                         >
                           <Pencil className="h-4 w-4 mr-1" />
                           Edit
@@ -291,7 +302,7 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-destructive hover:text-destructive"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                           onClick={() => handleDeleteReminder(reminder.id)}
                           disabled={isDeleting}
                         >
@@ -305,15 +316,15 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
               })}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No reminders set</p>
+            <p className="text-sm text-white/60">No reminders set. Click + to create one.</p>
           )}
         </Card>
       </div>
 
       {allLinkedInsights.length > 0 && (
-        <Card className="p-6">
-          <h3 className="font-semibold flex items-center gap-2 mb-4">
-            <Link2 className="h-4 w-4" />
+        <Card className="p-6 border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm">
+          <h3 className="font-semibold flex items-center gap-2 mb-6 text-white">
+            <Link2 className="h-5 w-5 text-purple-400" />
             Related Insights ({allLinkedInsights.length})
           </h3>
 
@@ -322,10 +333,10 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
               <Link
                 key={linked.id}
                 href={`/dashboard/insights/${linked.id}`}
-                className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                className="p-4 rounded-xl border-2 border-white/20 bg-slate-800/50 hover:bg-slate-800/70 hover:border-white/40 transition-all group"
               >
-                <h4 className="font-medium mb-2 line-clamp-2">{linked.title}</h4>
-                <p className="text-sm text-muted-foreground line-clamp-1">{linked.takeaway}</p>
+                <h4 className="font-semibold mb-2 line-clamp-2 text-white group-hover:text-purple-400 transition-colors">{linked.title}</h4>
+                <p className="text-sm text-white/70 line-clamp-1">{linked.takeaway}</p>
               </Link>
             ))}
           </div>
