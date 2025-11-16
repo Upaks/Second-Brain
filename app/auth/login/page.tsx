@@ -17,7 +17,7 @@ export default function LoginPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 py-12">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Gradient orbs */}
