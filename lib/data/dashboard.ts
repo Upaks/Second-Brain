@@ -67,7 +67,7 @@ function mapInsights(insights: InsightRecord[]) {
   }))
 }
 
-async function fetchInsights(userId: string, tag?: string, cursor?: string, limit = INSIGHTS_GRID_PAGE_SIZE) {
+export async function fetchInsights(userId: string, tag?: string, cursor?: string, limit = INSIGHTS_GRID_PAGE_SIZE) {
   const where: Record<string, unknown> = { userId }
 
   if (tag) {

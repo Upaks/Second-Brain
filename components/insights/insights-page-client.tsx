@@ -28,10 +28,16 @@ export function InsightsPageClient({ initialInsights, initialCursor, tags, selec
       if (selectedTag) {
         params.set("tag", selectedTag)
       }
+      // Add cache-busting timestamp to ensure we get fresh data
+      params.set("_t", Date.now().toString())
 
       const res = await fetch(`/api/insights/list?${params.toString()}`, {
         method: "GET",
         cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+        },
       })
 
       if (!res.ok) {
@@ -55,6 +61,7 @@ export function InsightsPageClient({ initialInsights, initialCursor, tags, selec
         try {
           setError(null)
           const data = await fetchPage()
+          // Set fresh data from server
           setInsights(data.items)
           setNextCursor(data.nextCursor)
         } catch (err) {

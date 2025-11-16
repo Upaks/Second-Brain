@@ -87,6 +87,17 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
       const res = await fetch(`/api/insights/${insight.id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete insight")
 
+      // Revalidate cache before navigation
+      try {
+        await fetch("/api/insights/revalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      } catch (error) {
+        console.error("[v0] Revalidation error:", error)
+      }
+
+      // Navigate and refresh
       router.push("/dashboard/insights")
       router.refresh()
     } catch (error) {

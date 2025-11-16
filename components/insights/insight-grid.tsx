@@ -93,12 +93,13 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
       return
     }
 
+    const idsToDelete = [...selectedIds]
     setIsBulkDeleting(true)
     try {
       const res = await fetch("/api/insights/bulk/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ insightIds: selectedIds }),
+        body: JSON.stringify({ insightIds: idsToDelete }),
       })
 
       if (!res.ok) {
@@ -106,13 +107,34 @@ export function InsightGrid({ insights, availableTags, onDeleted }: InsightGridP
         throw new Error(body.error ?? "Failed to delete insights")
       }
 
-      onDeleted?.(selectedIds)
+      // Clear selection first
       setSelectedIds([])
       setIsSelecting(false)
-      await revalidateServerData()
+      
+      // Revalidate cache and wait for it to complete
+      await fetch("/api/insights/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      
+      // Wait longer to ensure cache is fully cleared
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Trigger refetch with cache busting - the handler will filter out deleted IDs
+      emitInvalidateEvent()
+      
+      // Also optimistically remove as a backup (but refetch should handle it)
+      onDeleted?.(idsToDelete)
     } catch (err) {
       console.error("[v0] Bulk delete error:", err)
       alert(err instanceof Error ? err.message : "Failed to delete insights.")
+      // Refresh to get accurate state if deletion failed
+      await fetch("/api/insights/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      await new Promise(resolve => setTimeout(resolve, 300))
+      emitInvalidateEvent()
     } finally {
       setIsBulkDeleting(false)
     }
