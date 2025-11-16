@@ -1,73 +1,106 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Brain, Search, Lightbulb, Clock } from "lucide-react"
+import {
+  ArrowRight,
+  Brain,
+  Search,
+  Lightbulb,
+  Clock,
+  Layers,
+  Folder,
+  CheckCircle2,
+  Sparkles,
+  Zap,
+  Shield,
+  Globe,
+  Users,
+  FileText,
+  LinkIcon,
+  ImageIcon,
+  Music,
+  Star,
+  ChevronDown,
+  Play,
+  TrendingUp,
+  BookOpen,
+  Target,
+  Rocket,
+} from "lucide-react"
+import { HeroSection } from "@/components/landing/hero-section"
+import { FeaturesSection } from "@/components/landing/features-section"
+import { SocialProofSection } from "@/components/landing/social-proof-section"
+import { UseCasesSection } from "@/components/landing/use-cases-section"
+import { PricingSection } from "@/components/landing/pricing-section"
+import { TestimonialsSection } from "@/components/landing/testimonials-section"
+import { FAQSection } from "@/components/landing/faq-section"
+import { CTASection } from "@/components/landing/cta-section"
+import { Footer } from "@/components/landing/footer"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-20">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <div className="mb-8 flex items-center justify-center">
-            <div className="p-4 rounded-2xl bg-primary/10 backdrop-blur-sm">
-              <Brain className="h-12 w-12 text-primary" />
-            </div>
-          </div>
-
-          <h1 className="text-6xl font-bold mb-6 tracking-tight">
-            Your AI <span className="text-gradient">Second Brain</span>
-          </h1>
-
-          <p className="text-xl text-muted-foreground mb-12 max-w-2xl leading-relaxed">
-            Remember everything you read, hear, watch, or think — and get it back when it matters. Capture knowledge
-            effortlessly and let AI organize it for you.
-          </p>
-
-          <div className="flex gap-4">
-            <Button size="lg" className="h-12 px-8 text-base" asChild>
-              <Link href="/auth/signup">
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+    <div className="min-h-screen bg-slate-950">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                <Brain className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-bold text-white">Second Brain</span>
+            </Link>
+            <div className="hidden md:flex items-center gap-6">
+              <Link href="#features" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                Features
               </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="h-12 px-8 text-base bg-transparent" asChild>
-              <Link href="/auth/login">Sign In</Link>
-            </Button>
+              <Link href="#use-cases" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                Use Cases
+              </Link>
+              <Link href="#pricing" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                Pricing
+              </Link>
+              <Link href="#faq" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                FAQ
+              </Link>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10" asChild>
+                <Link href="/auth/login">Sign In</Link>
+              </Button>
+              <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0" asChild>
+                <Link href="/auth/signup">Get Started</Link>
+              </Button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Feature Grid */}
-        <div className="mt-32 grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <div className="p-8 rounded-2xl bg-card border border-border card-hover">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-              <Lightbulb className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-3">Capture Fast</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Save ideas, links, files, or audio with zero friction. Paste, drop, or speak — we handle the rest.
-            </p>
-          </div>
+      {/* Hero Section */}
+      <HeroSection />
 
-          <div className="p-8 rounded-2xl bg-card border border-border card-hover">
-            <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-              <Search className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="text-xl font-semibold mb-3">Find Fast</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Semantic search understands what you mean, not just what you type. Find anything instantly.
-            </p>
-          </div>
+      {/* Social Proof */}
+      <SocialProofSection />
 
-          <div className="p-8 rounded-2xl bg-card border border-border card-hover">
-            <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center mb-6">
-              <Clock className="h-6 w-6 text-success" />
-            </div>
-            <h3 className="text-xl font-semibold mb-3">Apply at the Right Time</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Get reminded when ideas become relevant. Never let important insights slip through the cracks.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Features Section */}
+      <FeaturesSection />
+
+      {/* Use Cases Section */}
+      <UseCasesSection />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* Pricing Section */}
+      <PricingSection />
+
+      {/* FAQ Section */}
+      <FAQSection />
+
+      {/* Final CTA Section */}
+      <CTASection />
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }
