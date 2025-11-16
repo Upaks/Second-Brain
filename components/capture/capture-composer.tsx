@@ -52,6 +52,8 @@ export function CaptureComposer() {
           if (item.status === "DONE") {
             setStatus("Syncing insights…")
             await new Promise((resolve) => setTimeout(resolve, 350))
+            // Mark that insights were just created so pages will refresh on navigation
+            sessionStorage.setItem("insights:lastCreated", Date.now().toString())
             await invalidateInsights()
             setStatus("")
             return
@@ -101,6 +103,8 @@ export function CaptureComposer() {
 
       if (data.status === "COMPLETED") {
         setStatus("Syncing insights…")
+        // Mark that insights were just created so pages will refresh on navigation
+        sessionStorage.setItem("insights:lastCreated", Date.now().toString())
         await invalidateInsights()
         setStatus("")
         setContent("")
@@ -141,6 +145,8 @@ export function CaptureComposer() {
 
       if (data.status === "COMPLETED") {
         setStatus("Syncing insights…")
+        // Mark that insights were just created so pages will refresh on navigation
+        sessionStorage.setItem("insights:lastCreated", Date.now().toString())
         await invalidateInsights()
         setStatus("")
         return
@@ -158,17 +164,19 @@ export function CaptureComposer() {
   }
 
   return (
-    <div className="rounded-2xl border bg-card shadow-sm">
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <div className="relative rounded-3xl border-2 border-white/20 bg-slate-900/95 backdrop-blur-2xl shadow-2xl overflow-hidden">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10" />
+      <form onSubmit={handleSubmit} className="p-6 space-y-4 relative z-10">
         <Textarea
           placeholder="Paste text, drop a link, or type your thoughts..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
           disabled={isLoading}
-          className="min-h-[120px] text-base resize-none border-0 focus-visible:ring-0 shadow-none"
+          className="min-h-[120px] text-base resize-none border-0 focus-visible:ring-0 shadow-none bg-transparent text-white placeholder:text-white/50"
         />
 
-        <div className="flex flex-col gap-4 pt-2 border-t sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 pt-2 border-t border-white/10 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -176,7 +184,7 @@ export function CaptureComposer() {
               size="sm"
               disabled={isLoading}
               onClick={() => document.getElementById("file-upload")?.click()}
-              className="gap-2"
+              className="gap-2 text-white/70 hover:text-white hover:bg-white/10"
             >
               <FileText className="h-4 w-4" />
               File
@@ -190,12 +198,12 @@ export function CaptureComposer() {
               disabled={isLoading}
             />
 
-            <Button type="button" variant="ghost" size="sm" disabled={true} className="gap-2">
+            <Button type="button" variant="ghost" size="sm" disabled={true} className="gap-2 text-white/40">
               <ImageIcon className="h-4 w-4" />
               Image
             </Button>
 
-            <Button type="button" variant="ghost" size="sm" disabled={true} className="gap-2">
+            <Button type="button" variant="ghost" size="sm" disabled={true} className="gap-2 text-white/40">
               <Mic className="h-4 w-4" />
               Audio
             </Button>
@@ -203,13 +211,17 @@ export function CaptureComposer() {
 
           <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             {status && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-white/70">
                 <Spinner size="sm" />
                 {status}
               </div>
             )}
 
-            <Button type="submit" disabled={!content.trim() || isLoading} className="gap-2 w-full sm:w-auto">
+            <Button 
+              type="submit" 
+              disabled={!content.trim() || isLoading} 
+              className="gap-2 w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all"
+            >
               <Sparkles className="h-4 w-4" />
               Capture
             </Button>

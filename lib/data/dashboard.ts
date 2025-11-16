@@ -102,31 +102,37 @@ export async function fetchInsights(userId: string, tag?: string, cursor?: strin
   }
 }
 
+async function fetchRecentInsightsUncached(userId: string): Promise<InsightListItem[]> {
+  const insights = await prisma.insight.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      title: true,
+      takeaway: true,
+      createdAt: true,
+      tags: insightSelect.tags,
+      reminders: insightSelect.reminders,
+    },
+    orderBy: insightOrderBy,
+    take: RECENT_INSIGHTS_LIMIT,
+  })
+
+  return insights.map((insight) => ({
+    ...insight,
+    reminders: insight.reminders ?? [],
+  }))
+}
+
 export async function getRecentInsights(userId: string): Promise<InsightListItem[]> {
   return unstable_cache(
-    async () => {
-      const insights = await prisma.insight.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          title: true,
-          takeaway: true,
-          createdAt: true,
-          tags: insightSelect.tags,
-          reminders: insightSelect.reminders,
-        },
-        orderBy: insightOrderBy,
-        take: RECENT_INSIGHTS_LIMIT,
-      })
-
-      return insights.map((insight) => ({
-        ...insight,
-        reminders: insight.reminders ?? [],
-      }))
-    },
+    () => fetchRecentInsightsUncached(userId),
     ["dashboard-recent", userId],
     { tags: [cacheTags.dashboardRecent(userId), cacheTags.insights(userId)] },
   )()
+}
+
+export async function fetchRecentInsights(userId: string): Promise<InsightListItem[]> {
+  return fetchRecentInsightsUncached(userId)
 }
 
 export async function getInsightsGrid(

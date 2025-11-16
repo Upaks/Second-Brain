@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -38,9 +38,15 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
   const [editingReminder, setEditingReminder] = useState<EditingReminder>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [isDeletingInsight, setIsDeletingInsight] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   const allLinkedInsights = [...insight.linksTo.map((l) => l.to), ...insight.linksFrom.map((l) => l.from)]
   const nextReminder = insight.reminders[0] ?? null
+
+  // Fix hydration mismatch by only rendering relative time on client
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   function handleReminderDialogChange(open: boolean) {
     setIsReminderDialogOpen(open)
@@ -155,7 +161,9 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            {formatDistanceToNow(new Date(insight.createdAt), { addSuffix: true })}
+            {isMounted
+              ? formatDistanceToNow(new Date(insight.createdAt), { addSuffix: true })
+              : format(new Date(insight.createdAt), "MMM d, yyyy")}
           </div>
         </div>
 
@@ -163,8 +171,8 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm text-primary">
           <Bell className="h-4 w-4" />
           <div>
-            Next reminder scheduled for {format(new Date(nextReminder.dueAt), "MMM d, yyyy h:mm a")} (
-            {formatDistanceToNow(new Date(nextReminder.dueAt), { addSuffix: true })})
+            Next reminder scheduled for {format(new Date(nextReminder.dueAt), "MMM d, yyyy h:mm a")}
+            {isMounted && ` (${formatDistanceToNow(new Date(nextReminder.dueAt), { addSuffix: true })})`}
           </div>
         </div>
       )}
@@ -264,7 +272,9 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(dueDate, { addSuffix: true })}
+                          {isMounted
+                            ? formatDistanceToNow(dueDate, { addSuffix: true })
+                            : format(dueDate, "MMM d, yyyy h:mm a")}
                         </div>
                         {reminder.note && <p className="text-sm text-muted-foreground">{reminder.note}</p>}
                       </div>

@@ -24,12 +24,12 @@ function SidebarContentInner({ onNavigate }: SidebarContentProps) {
 
   return (
     <>
-      <div className="border-b p-6">
+      <div className="border-b border-white/10 p-6">
         <Link href="/dashboard" className="group flex items-center gap-3" onClick={onNavigate}>
-          <div className="rounded-xl bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
-            <Brain className="h-6 w-6 text-primary" />
+          <div className="rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-2 transition-transform group-hover:scale-110 shadow-lg shadow-purple-500/50">
+            <Brain className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xl font-bold">Second Brain</span>
+          <span className="text-xl font-bold text-white">Second Brain</span>
         </Link>
       </div>
 
@@ -46,8 +46,8 @@ function SidebarContentInner({ onNavigate }: SidebarContentProps) {
               className={cn(
                 "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50"
+                  : "text-white/70 hover:bg-white/10 hover:text-white",
               )}
             >
               <Icon className="h-5 w-5" />
@@ -57,15 +57,15 @@ function SidebarContentInner({ onNavigate }: SidebarContentProps) {
         })}
       </nav>
 
-      <div className="border-t p-4">
+      <div className="border-t border-white/10 p-4">
         <Link
           href="/dashboard/settings"
           onClick={onNavigate}
           className={cn(
             "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
             pathname === "/dashboard/settings"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50"
+              : "text-white/70 hover:bg-white/10 hover:text-white",
           )}
         >
           <Settings className="h-5 w-5" />
@@ -78,7 +78,7 @@ function SidebarContentInner({ onNavigate }: SidebarContentProps) {
 
 export function Sidebar({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
   return (
-    <aside className={cn("flex w-64 flex-col border-r bg-card", className)}>
+    <aside className={cn("flex w-64 flex-col border-r border-white/10 bg-slate-900/95 backdrop-blur-xl", className)}>
       <SidebarContentInner onNavigate={onNavigate} />
     </aside>
   )

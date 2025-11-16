@@ -49,10 +49,18 @@ export function InsightsPageClient({ initialInsights, initialCursor, tags, selec
     [selectedTag],
   )
 
-  // Check on mount if we need to refresh (e.g., after a deletion)
+  // Check on mount if we need to refresh (e.g., after a deletion or new insights)
   useEffect(() => {
     const needsRefresh = sessionStorage.getItem("insights:needsRefresh")
-    if (needsRefresh === "true") {
+    const lastInsightCreated = sessionStorage.getItem("insights:lastCreated")
+    
+    // Check if we should refresh:
+    // 1. Explicit refresh flag (from deletions)
+    // 2. New insights were created recently (within last 30 seconds)
+    const shouldRefresh = needsRefresh === "true" || 
+      (lastInsightCreated && Date.now() - parseInt(lastInsightCreated) < 30000)
+    
+    if (shouldRefresh) {
       sessionStorage.removeItem("insights:needsRefresh")
       sessionStorage.removeItem("insights:deletedId")
       // Immediately refetch fresh data
