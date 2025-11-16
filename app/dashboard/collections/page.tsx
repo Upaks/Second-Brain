@@ -14,8 +14,8 @@ export default async function CollectionsPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Collections</h1>
-            <p className="text-muted-foreground text-lg">Organize insights into curated collections</p>
+            <h1 className="text-4xl sm:text-5xl font-black mb-3 text-white">Collections</h1>
+            <p className="text-white/70 text-lg">Organize insights into curated collections</p>
           </div>
           <CreateCollectionButton />
         </div>

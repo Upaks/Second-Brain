@@ -20,10 +20,10 @@ export function CollectionsGrid({ collections }: CollectionsGridProps) {
     return (
       <Empty>
         <EmptyIcon>
-          <Folder className="h-8 w-8 text-muted-foreground" />
+          <Folder className="h-8 w-8 text-white/40" />
         </EmptyIcon>
-        <EmptyTitle>No collections yet</EmptyTitle>
-        <EmptyDescription>Create collections to organize your insights by topic, project, or theme</EmptyDescription>
+        <EmptyTitle className="text-white">No collections yet</EmptyTitle>
+        <EmptyDescription className="text-white/60">Create collections to organize your insights by topic, project, or theme</EmptyDescription>
       </Empty>
     )
   }

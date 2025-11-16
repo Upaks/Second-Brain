@@ -48,14 +48,18 @@ export function InsightFilters({ tags, selectedTag }: InsightFiltersProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="text-sm font-medium text-muted-foreground">Filter by tag:</span>
+      <span className="text-sm font-medium text-white/70">Filter by tag:</span>
 
       <div className="flex flex-wrap items-center gap-2">
         {visibleTags.map((tag) => (
           <Badge
             key={tag.id}
             variant={selectedTag === tag.name ? "default" : "outline"}
-            className="cursor-pointer hover:bg-primary/20 transition-colors max-w-[10rem] truncate"
+            className={`cursor-pointer transition-colors max-w-[10rem] truncate ${
+              selectedTag === tag.name
+                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0"
+                : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+            }`}
             onClick={() => handleTagClick(tag.name)}
             title={tag.name}
           >
@@ -66,20 +70,20 @@ export function InsightFilters({ tags, selectedTag }: InsightFiltersProps) {
         {hiddenTags.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Button variant="outline" size="sm" className="flex items-center gap-1 bg-white/10 text-white border-white/20 hover:bg-white/20">
                 +{hiddenTags.length} more
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-64 w-56 overflow-auto">
+            <DropdownMenuContent align="start" className="max-h-64 w-56 overflow-auto bg-slate-900/95 backdrop-blur-xl border-white/20">
               {hiddenTags.map((tag) => (
                 <DropdownMenuItem
                   key={tag.id}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-white/90 focus:bg-white/10 focus:text-white"
                   onClick={() => handleTagClick(tag.name)}
                 >
                   <span
-                    className={`truncate ${selectedTag === tag.name ? "font-semibold text-primary" : ""}`}
+                    className={`truncate ${selectedTag === tag.name ? "font-semibold text-purple-400" : ""}`}
                     title={tag.name}
                   >
                     {tag.name}
@@ -92,7 +96,7 @@ export function InsightFilters({ tags, selectedTag }: InsightFiltersProps) {
       </div>
 
       {selectedTag && (
-        <Button variant="ghost" size="sm" onClick={clearFilters}>
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="text-white/70 hover:text-white hover:bg-white/10">
           <X className="h-4 w-4 mr-1" />
           Clear
         </Button>

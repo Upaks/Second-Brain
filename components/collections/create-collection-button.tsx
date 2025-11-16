@@ -64,20 +64,20 @@ export function CreateCollectionButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all">
           <Plus className="h-4 w-4" />
           New Collection
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="bg-slate-900/95 backdrop-blur-xl border-white/20">
         <DialogHeader>
-          <DialogTitle>Create Collection</DialogTitle>
-          <DialogDescription>Organize your insights into a themed collection</DialogDescription>
+          <DialogTitle className="text-white">Create Collection</DialogTitle>
+          <DialogDescription className="text-white/60">Organize your insights into a themed collection</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name" className="text-white/90">Name</Label>
             <Input
               id="name"
               placeholder="e.g. Product Ideas, Reading List"
@@ -85,11 +85,12 @@ export function CreateCollectionButton() {
               onChange={(e) => setName(e.target.value)}
               required
               disabled={isLoading}
+              className="bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-500/50 focus:ring-purple-500/20"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
+            <Label htmlFor="description" className="text-white/90">Description (optional)</Label>
             <Textarea
               id="description"
               placeholder="What's this collection about?"
@@ -97,10 +98,15 @@ export function CreateCollectionButton() {
               onChange={(e) => setDescription(e.target.value)}
               disabled={isLoading}
               rows={3}
+              className="bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-500/50 focus:ring-purple-500/20"
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading || !name.trim()}>
+          <Button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all" 
+            disabled={isLoading || !name.trim()}
+          >
             {isLoading ? (
               <>
                 <Spinner size="sm" className="mr-2" />

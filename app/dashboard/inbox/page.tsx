@@ -95,8 +95,8 @@ export default async function InboxPage() {
       <div className="space-y-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Inbox</h1>
-            <p className="text-muted-foreground text-lg">Recent captures and processing status</p>
+            <h1 className="text-4xl sm:text-5xl font-black mb-3 text-white">Inbox</h1>
+            <p className="text-white/70 text-lg">Recent captures and processing status</p>
           </div>
           <ResetStuckItemsButton />
         </div>

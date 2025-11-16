@@ -50,23 +50,28 @@ export function SearchInterface({ userId }: SearchInterfaceProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Search</h1>
-        <p className="text-muted-foreground text-lg">Find anything by meaning, not just keywords</p>
+        <h1 className="text-4xl sm:text-5xl font-black mb-3 text-white">Search</h1>
+        <p className="text-white/70 text-lg">Find anything by meaning, not just keywords</p>
       </div>
 
       <form onSubmit={handleSearch} className="max-w-3xl">
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 z-10" />
             <Input
               placeholder="What are you looking for?"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               disabled={isLoading}
-              className="h-14 pl-12 text-base"
+              className="h-14 pl-12 text-base bg-slate-900/95 border-white/20 text-white placeholder:text-white/50 focus:border-purple-500/50 focus:ring-purple-500/20"
             />
           </div>
-          <Button type="submit" size="lg" disabled={!query.trim() || isLoading} className="h-14 px-8 gap-2">
+          <Button 
+            type="submit" 
+            size="lg" 
+            disabled={!query.trim() || isLoading} 
+            className="h-14 px-8 gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all"
+          >
             {isLoading ? (
               <>
                 <Spinner size="sm" />
@@ -93,25 +98,25 @@ export function SearchInterface({ userId }: SearchInterfaceProps) {
           ) : (
             <Empty>
               <EmptyIcon>
-                <Search className="h-8 w-8 text-muted-foreground" />
+                <Search className="h-8 w-8 text-white/40" />
               </EmptyIcon>
-              <EmptyTitle>No results found</EmptyTitle>
-              <EmptyDescription>Try adjusting your search query or create a new insight</EmptyDescription>
+              <EmptyTitle className="text-white">No results found</EmptyTitle>
+              <EmptyDescription className="text-white/60">Try adjusting your search query or create a new insight</EmptyDescription>
             </Empty>
           )
         ) : (
           <Empty>
             <EmptyIcon>
-              <Sparkles className="h-8 w-8 text-muted-foreground" />
+              <Sparkles className="h-8 w-8 text-white/40" />
             </EmptyIcon>
-            <EmptyTitle>Semantic Search</EmptyTitle>
-            <EmptyDescription>Search naturally — ask questions, describe concepts, or use keywords</EmptyDescription>
+            <EmptyTitle className="text-white">Semantic Search</EmptyTitle>
+            <EmptyDescription className="text-white/60">Search naturally — ask questions, describe concepts, or use keywords</EmptyDescription>
             <div className="mt-6 space-y-2 text-left max-w-md">
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Try:</strong> &ldquo;productivity tips I saved last month&rdquo;
+              <p className="text-sm text-white/60">
+                <strong className="text-white">Try:</strong> &ldquo;productivity tips I saved last month&rdquo;
               </p>
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Or:</strong> &ldquo;articles about AI and design&rdquo;
+              <p className="text-sm text-white/60">
+                <strong className="text-white">Or:</strong> &ldquo;articles about AI and design&rdquo;
               </p>
             </div>
           </Empty>

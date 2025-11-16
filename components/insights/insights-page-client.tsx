@@ -142,8 +142,8 @@ export function InsightsPageClient({ initialInsights, initialCursor, tags, selec
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold mb-2">All Insights</h1>
-          <p className="text-muted-foreground text-lg">
+          <h1 className="text-4xl sm:text-5xl font-black mb-3 text-white">All Insights</h1>
+          <p className="text-white/70 text-lg">
             {count} {count === 1 ? "insight" : "insights"} in your knowledge base
           </p>
         </div>
@@ -154,14 +154,14 @@ export function InsightsPageClient({ initialInsights, initialCursor, tags, selec
 
       <InsightGrid insights={insights} availableTags={tags} onDeleted={handleDeleted} />
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       {nextCursor && (
         <div className="flex justify-center">
           <button
             type="button"
             onClick={handleLoadMore}
-            className="px-4 py-2 text-sm font-medium rounded-full border border-border hover:bg-muted transition-colors"
+            className="px-4 py-2 text-sm font-medium rounded-full border border-white/20 bg-slate-900/95 text-white hover:bg-white/10 transition-colors"
             disabled={isPending}
           >
             {isPending ? "Loading…" : "Load more insights"}

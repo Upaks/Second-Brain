@@ -15,23 +15,23 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
 
   const card = (
     <Card
-      className={`p-6 h-full transition-all group min-w-0 ${
-        disableLink ? "cursor-default" : "hover:shadow-lg hover:border-primary/50 cursor-pointer"
+      className={`p-6 h-full transition-all group min-w-0 border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm ${
+        disableLink ? "cursor-default" : "hover:shadow-2xl hover:scale-[1.02] hover:border-white/40 cursor-pointer"
       }`}
     >
       <div className="flex flex-col h-full space-y-4">
         <div className="flex-1">
-          <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors line-clamp-2">
+          <h3 className="text-xl font-semibold mb-3 text-white group-hover:text-purple-400 transition-colors line-clamp-2">
             {insight.title}
           </h3>
 
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{insight.takeaway}</p>
+          <p className="text-sm text-white/70 mb-4 line-clamp-2 leading-relaxed">{insight.takeaway}</p>
 
           {insight.summaryPreview.length > 0 && (
             <div className="space-y-2">
               {insight.summaryPreview.map((bullet, index) => (
-                <div key={index} className="flex gap-2 text-sm text-muted-foreground">
-                  <span className="text-primary mt-1 shrink-0">•</span>
+                <div key={index} className="flex gap-2 text-sm text-white/60">
+                  <span className="text-purple-400 mt-1 shrink-0">•</span>
                   <span className="line-clamp-1 break-words">{bullet}</span>
                 </div>
               ))}
@@ -39,32 +39,32 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
           )}
         </div>
 
-        <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-3 pt-4 border-t border-white/10">
           {insight.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {insight.tags.slice(0, 4).map(({ tag }) => {
                 return (
-                  <Badge key={tag.id} variant="secondary" className="text-xs whitespace-normal break-words max-w-full">
+                  <Badge key={tag.id} variant="secondary" className="text-xs whitespace-normal break-words max-w-full bg-white/10 text-white border-white/20">
                   {tag.name}
                 </Badge>
                 )
               })}
               {insight.tags.length > 4 && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-white/10 text-white border-white/20">
                   +{insight.tags.length - 4}
                 </Badge>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground gap-3">
+          <div className="flex items-center justify-between text-xs text-white/60 gap-3">
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3" />
               {formatDistanceToNow(new Date(insight.createdAt), { addSuffix: true })}
             </div>
 
             {upcomingReminder && (
-              <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-primary">
+              <div className="flex items-center gap-1 rounded-md border border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 px-2 py-1 text-purple-300">
                 <Bell className="h-3 w-3" />
                 {format(new Date(upcomingReminder.dueAt), "MMM d, h:mm a")}
               </div>

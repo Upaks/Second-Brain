@@ -20,10 +20,10 @@ export function InboxList({ items }: InboxListProps) {
     return (
       <Empty>
         <EmptyIcon>
-          <Inbox className="h-8 w-8 text-muted-foreground" />
+          <Inbox className="h-8 w-8 text-white/40" />
         </EmptyIcon>
-        <EmptyTitle>Inbox is empty</EmptyTitle>
-        <EmptyDescription>Captured items will appear here while they&apos;re being processed</EmptyDescription>
+        <EmptyTitle className="text-white">Inbox is empty</EmptyTitle>
+        <EmptyDescription className="text-white/60">Captured items will appear here while they&apos;re being processed</EmptyDescription>
       </Empty>
     )
   }
@@ -35,8 +35,8 @@ export function InboxList({ items }: InboxListProps) {
     <div className="space-y-8">
       {pending.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Processing ({pending.length})</h2>
-          <div className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">Processing ({pending.length})</h2>
+          <div className="space-y-4">
             {pending.map((item) => (
               <InboxItem key={item.id} item={item} />
             ))}
@@ -46,8 +46,8 @@ export function InboxList({ items }: InboxListProps) {
 
       {done.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Recently Processed ({done.length})</h2>
-          <div className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">Recently Processed ({done.length})</h2>
+          <div className="space-y-4">
             {done.map((item) => (
               <InboxItem key={item.id} item={item} />
             ))}

@@ -73,7 +73,7 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-4">
+        <Button variant="ghost" size="sm" asChild className="mb-4 text-white/70 hover:text-white hover:bg-white/10">
           <Link href="/dashboard/collections">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Collections
@@ -82,14 +82,14 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
 
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h1 className="text-4xl font-bold mb-3">{collection.name}</h1>
+            <h1 className="text-4xl sm:text-5xl font-black mb-3 text-white">{collection.name}</h1>
             {collection.description && (
-              <p className="text-lg text-muted-foreground leading-relaxed">{collection.description}</p>
+              <p className="text-lg text-white/70 leading-relaxed">{collection.description}</p>
             )}
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)} className="bg-white/10 text-white border-white/20 hover:bg-white/20">
               <Edit className="h-4 w-4" />
             </Button>
             <Button
@@ -97,14 +97,14 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
               size="sm"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="hover:text-destructive hover:border-destructive bg-transparent"
+              className="bg-white/10 text-red-400 border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 mt-4 text-sm text-white/60">
           <span>{collection.insights.length} insights</span>
           <span>•</span>
           <span>Updated {formatDistanceToNow(new Date(collection.updatedAt), { addSuffix: true })}</span>
@@ -112,8 +112,8 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Insights</h2>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+        <h2 className="text-2xl font-bold text-white">Insights</h2>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all">
           <Plus className="h-4 w-4" />
           Add Insight
         </Button>
@@ -122,20 +122,20 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
       {collection.insights.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
           {collection.insights.map(({ insight }) => (
-            <Card key={insight.id} className="p-6 hover:shadow-lg transition-shadow">
+            <Card key={insight.id} className="p-6 hover:shadow-2xl hover:scale-[1.01] transition-all border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm hover:border-white/40">
               <div className="space-y-4">
                 <Link href={`/dashboard/insights/${insight.id}`} className="block group">
-                  <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                  <h3 className="text-lg font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors line-clamp-2">
                     {insight.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{insight.takeaway}</p>
+                  <p className="text-sm text-white/70 line-clamp-2 leading-relaxed">{insight.takeaway}</p>
                 </Link>
 
-                <div className="flex items-center justify-between pt-3 border-t">
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
                   {insight.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {insight.tags.slice(0, 3).map(({ tag }) => (
-                        <Badge key={tag.id} variant="secondary" className="text-xs">
+                        <Badge key={tag.id} variant="secondary" className="text-xs bg-white/10 text-white border-white/20">
                           {tag.name}
                         </Badge>
                       ))}
@@ -146,7 +146,7 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveInsight(insight.id)}
-                    className="ml-auto hover:text-destructive"
+                    className="ml-auto hover:text-red-400 hover:bg-red-500/10 text-white/70"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -156,9 +156,9 @@ export function CollectionDetail({ collection, userId }: CollectionDetailProps) 
           ))}
         </div>
       ) : (
-        <Card className="p-12 text-center">
-          <p className="text-muted-foreground">No insights in this collection yet</p>
-          <Button onClick={() => setIsAddDialogOpen(true)} className="mt-4 gap-2">
+        <Card className="p-12 text-center border-2 border-white/20 bg-slate-900/95 backdrop-blur-sm">
+          <p className="text-white/70">No insights in this collection yet</p>
+          <Button onClick={() => setIsAddDialogOpen(true)} className="mt-4 gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all">
             <Plus className="h-4 w-4" />
             Add Your First Insight
           </Button>
