@@ -5,6 +5,7 @@ import { Sidebar, SidebarContent } from "./sidebar"
 import { TopBar } from "./top-bar"
 import type { CurrentUser } from "@/lib/session"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Toaster } from "@/components/ui/sonner"
 
 interface DashboardShellProps {
   children: ReactNode
@@ -34,6 +35,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
           <div className="flex-1 px-4 sm:px-6 lg:px-10 py-6">{children}</div>
         </main>
       </div>
+      <Toaster />
     </div>
   )
 }

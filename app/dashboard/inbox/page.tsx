@@ -1,6 +1,7 @@
 import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { InboxList, type InboxIngestItem } from "@/components/inbox/inbox-list"
+import { ResetStuckItemsButton } from "@/components/inbox/reset-stuck-items-button"
 import { prisma } from "@/lib/db"
 import type { InsightTag, Tag } from "@prisma/client"
 
@@ -92,9 +93,12 @@ export default async function InboxPage() {
   return (
     <DashboardShell user={user}>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Inbox</h1>
-          <p className="text-muted-foreground text-lg">Recent captures and processing status</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Inbox</h1>
+            <p className="text-muted-foreground text-lg">Recent captures and processing status</p>
+          </div>
+          <ResetStuckItemsButton />
         </div>
 
         <InboxList items={itemsWithInsights} />

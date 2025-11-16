@@ -230,10 +230,8 @@ async function extractTextFromStorage(meta: any) {
 }
 
 export async function processIngestItem({ item }: ProcessOptions) {
-  await prisma.ingestItem.update({
-    where: { id: item.id },
-    data: { status: "PROCESSING" },
-  })
+  // Status is already set to PROCESSING by processIngestItemById
+  // No need to update again here
 
   try {
     const userId = item.userId
@@ -369,6 +367,67 @@ export async function processIngestItem({ item }: ProcessOptions) {
 }
 
 export async function processIngestItemById(ingestItemId: string) {
+  // First, check the current status and only proceed if it's PENDING
+  const currentItem = await prisma.ingestItem.findUnique({
+    where: { id: ingestItemId },
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+    },
+  })
+
+  if (!currentItem) {
+    throw new Error(`Ingest item ${ingestItemId} not found`)
+  }
+
+  // If item is stuck in PROCESSING for more than 1 hour, reset it to PENDING
+  // This handles cases where processing crashed or was interrupted
+  if (currentItem.status === "PROCESSING") {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    if (currentItem.createdAt < oneHourAgo) {
+      console.log(`[ingest] Resetting stuck item ${ingestItemId} from PROCESSING to PENDING`)
+      await prisma.ingestItem.update({
+        where: { id: ingestItemId },
+        data: { status: "PENDING" },
+      })
+      // Continue to process it
+    } else {
+      // Still processing, skip
+      console.log(`[ingest] Skipping ${ingestItemId} - still PROCESSING`)
+      return { skipped: true, status: currentItem.status }
+    }
+  }
+
+  // Skip if already done or error to prevent infinite loops
+  if (currentItem.status === "DONE" || currentItem.status === "ERROR") {
+    console.log(`[ingest] Skipping ${ingestItemId} - already ${currentItem.status}`)
+    return { skipped: true, status: currentItem.status }
+  }
+
+  // Atomically update status to PROCESSING only if it's PENDING
+  // This prevents race conditions when Inngest retries
+  const updated = await prisma.ingestItem.updateMany({
+    where: {
+      id: ingestItemId,
+      status: "PENDING", // Only update if still PENDING
+    },
+    data: {
+      status: "PROCESSING",
+    },
+  })
+
+  // If no rows were updated, another process already claimed it
+  if (updated.count === 0) {
+    const currentStatus = await prisma.ingestItem.findUnique({
+      where: { id: ingestItemId },
+      select: { status: true },
+    })
+    console.log(`[ingest] Item ${ingestItemId} already claimed by another process - status: ${currentStatus?.status}`)
+    return { skipped: true, status: currentStatus?.status }
+  }
+
+  // Now fetch the full item data for processing
   const ingestItem = await prisma.ingestItem.findUnique({
     where: { id: ingestItemId },
     select: {
@@ -381,7 +440,7 @@ export async function processIngestItemById(ingestItemId: string) {
   })
 
   if (!ingestItem) {
-    throw new Error(`Ingest item ${ingestItemId} not found`)
+    throw new Error(`Ingest item ${ingestItemId} not found after status update`)
   }
 
   return processIngestItem({ item: ingestItem })
