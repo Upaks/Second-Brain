@@ -4,8 +4,7 @@ const insightTagBase = (userId: string) => `insights:${userId}`
 const insightTagWithFilter = (userId: string, tag?: string) =>
   tag ? `${insightTagBase(userId)}:tag:${tag}` : insightTagBase(userId)
 const dashboardTagBase = (userId: string, scope: string) => `dashboard:${scope}:${userId}`
-const PROFILE = "manual"
-
+const PROFILE = "max"
 export const cacheTags = {
   insights: insightTagBase,
   insightFilter: insightTagWithFilter,

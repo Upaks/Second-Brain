@@ -45,8 +45,8 @@ export function InsightCardExpanded({ insight, disableLink = false }: InsightCar
               {insight.tags.slice(0, 4).map(({ tag }) => {
                 return (
                   <Badge key={tag.id} variant="secondary" className="text-xs whitespace-normal break-words max-w-full">
-                    {tag.name}
-                  </Badge>
+                  {tag.name}
+                </Badge>
                 )
               })}
               {insight.tags.length > 4 && (

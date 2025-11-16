@@ -30,8 +30,8 @@ export function CaptureComposer() {
 
   const waitForIngest = useCallback(
     async (ingestItemId: string) => {
-      const timeoutMs = 120_000
-      const intervalMs = 1_500
+      const timeoutMs = 240_000
+      const intervalMs = 2_500
       const deadline = Date.now() + timeoutMs
 
       while (Date.now() < deadline) {

@@ -153,17 +153,17 @@ export function InsightDetail({ insight, userId }: InsightDetailProps) {
           <Separator />
 
           {insight.summary && (
-            <div>
+          <div>
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Summary</h2>
             <div className="space-y-3">
-                {insight.summary.split("\n").map((bullet, i) => (
-                  <div key={i} className="flex gap-3">
-                    <span className="text-primary font-bold mt-1">•</span>
-                    <p className="text-base leading-relaxed">{bullet}</p>
-                  </div>
-                ))}
+              {insight.summary.split("\n").map((bullet, i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <p className="text-base leading-relaxed">{bullet}</p>
+                </div>
+              ))}
             </div>
-            </div>
+          </div>
           )}
 
           {insight.content && (
