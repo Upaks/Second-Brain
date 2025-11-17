@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
-import { revalidateInsights } from "@/lib/cache/tags"
+import { revalidateInsights, revalidateFlashcards } from "@/lib/cache/tags"
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -27,6 +28,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     })
 
     revalidateInsights(user.id)
+    revalidateFlashcards(user.id)
+    // Force refresh of the flashcards page
+    revalidatePath("/dashboard/flashcards")
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Delete insight error:", error)

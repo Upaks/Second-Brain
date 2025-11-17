@@ -178,7 +178,7 @@ export function SubscriptionManager({ subscription }: SubscriptionManagerProps) 
               subscription.status === "ACTIVE"
                 ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 text-green-300"
                 : subscription.status === "TRIALING"
-                  ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-300"
+                  ? "bg-gradient-to-r from-purple-500/40 to-pink-500/40 border-purple-400/70 text-purple-100"
                   : subscription.status === "PAST_DUE"
                     ? "bg-red-500/20 border-red-500/30 text-red-300"
                     : "bg-slate-800/50 border-slate-700/50 text-slate-300"
@@ -228,7 +228,7 @@ export function SubscriptionManager({ subscription }: SubscriptionManagerProps) 
               variant="outline"
               onClick={handleCancel}
               disabled={loading}
-              className="border-slate-700/50 text-slate-200 hover:bg-slate-800/50 hover:text-white hover:border-red-500/50"
+              className="bg-slate-800/40 border-slate-600/70 text-slate-100 hover:bg-red-500/10 hover:text-white hover:border-red-500/70"
             >
               {loading && action === "cancel" ? (
                 <>

@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
-import { revalidateInsights } from "@/lib/cache/tags"
+import { revalidateInsights, revalidateFlashcards } from "@/lib/cache/tags"
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +35,8 @@ export async function POST(request: NextRequest) {
     // This prevents errors when trying to delete items that no longer exist
     if (ownedInsights.length === 0) {
       revalidateInsights(user.id)
+      revalidateFlashcards(user.id)
+      revalidatePath("/dashboard/flashcards")
       return NextResponse.json({ success: true, deleted: 0, message: "No insights found to delete" })
     }
 
@@ -68,6 +71,9 @@ export async function POST(request: NextRequest) {
     ])
 
     revalidateInsights(user.id)
+    revalidateFlashcards(user.id)
+    // Force refresh of the flashcards page
+    revalidatePath("/dashboard/flashcards")
     return NextResponse.json({ success: true, deleted: ownedIds.length })
   } catch (error) {
     console.error("[v0] Bulk delete insights error:", error)

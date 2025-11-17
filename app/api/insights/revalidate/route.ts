@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getCurrentUser } from "@/lib/session"
-import { revalidateInsights, revalidateTags } from "@/lib/cache/tags"
+import { revalidateInsights, revalidateTags, revalidateFlashcards } from "@/lib/cache/tags"
 
 export async function POST() {
   const user = await getCurrentUser()
@@ -12,6 +12,7 @@ export async function POST() {
 
   revalidateInsights(user.id)
   revalidateTags(user.id)
+  revalidateFlashcards(user.id)
 
   return NextResponse.json({ success: true })
 }

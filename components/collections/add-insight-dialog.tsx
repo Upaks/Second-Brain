@@ -85,14 +85,14 @@ export function AddInsightDialog({ collectionId, open, onOpenChange, onUpdate }:
         <div className="flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 z-10" />
-            <Input
-              placeholder="Search insights..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              disabled={isLoading}
+          <Input
+            placeholder="Search insights..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            disabled={isLoading}
               className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-500/50 focus:ring-purple-500/20"
-            />
+          />
           </div>
           <Button 
             onClick={handleSearch} 

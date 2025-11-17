@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/session"
 import { prisma } from "@/lib/db"
-import { revalidateInsights, revalidateTags } from "@/lib/cache/tags"
+import { revalidateInsights, revalidateTags, revalidateFlashcards } from "@/lib/cache/tags"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     revalidateInsights(user.id)
     revalidateTags(user.id)
+    revalidateFlashcards(user.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Tags update error:", error)

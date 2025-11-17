@@ -64,14 +64,14 @@ export default function LoginPage() {
           {/* Background gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10" />
           <div className="relative z-10">
-            <LoginForm />
+          <LoginForm />
           </div>
         </div>
 
         {/* Footer Links */}
         <div className="mt-8 text-center space-y-4">
           <p className="text-sm text-white/60">
-            Don&apos;t have an account?{" "}
+          Don&apos;t have an account?{" "}
             <Link href="/auth/signup" className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">
               Sign up for free
             </Link>

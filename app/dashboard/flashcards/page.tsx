@@ -1,26 +1,18 @@
+import { Suspense } from "react"
+
 import { requireCurrentUser } from "@/lib/session"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
-import { FlashcardWorkspaceClient } from "@/components/flashcards/flashcard-workspace-client"
-import type { FlashcardDeck } from "@/components/flashcards/flashcard-workspace"
-import { getFlashcardDecksForUser } from "@/lib/flashcards-server"
+import { FlashcardsStreamSection } from "@/components/flashcards/flashcards-stream-section"
+import { FlashcardsPageSkeleton } from "@/components/flashcards/flashcards-page-skeleton"
 
 export default async function FlashcardsPage() {
   const user = await requireCurrentUser()
 
-  const rawDecks = await getFlashcardDecksForUser(user.id)
-  const decks: FlashcardDeck[] = rawDecks.map((deck) => ({
-    id: deck.id,
-    name: deck.name,
-    description: deck.description,
-    flashcards: deck.flashcards,
-  }))
-  const totalCards =
-    rawDecks.find((deck) => deck.id === "all")?.flashcards.length ??
-    rawDecks.reduce((acc, deck) => acc + deck.flashcards.length, 0)
-
   return (
     <DashboardShell user={user}>
-      <FlashcardWorkspaceClient decks={decks} totalCards={totalCards} />
+      <Suspense fallback={<FlashcardsPageSkeleton />}>
+        <FlashcardsStreamSection userId={user.id} />
+      </Suspense>
     </DashboardShell>
   )
 }

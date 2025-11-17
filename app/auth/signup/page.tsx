@@ -48,7 +48,7 @@ export default function SignupPage() {
           {/* Left: Branding & Benefits */}
           <div className="hidden lg:block">
             <div className="flex flex-col items-start mb-8">
-              <Link href="/" className="flex items-center gap-3 mb-6 group">
+          <Link href="/" className="flex items-center gap-3 mb-6 group">
                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/50">
                   <Brain className="h-8 w-8 text-white" />
                 </div>
@@ -94,7 +94,7 @@ export default function SignupPage() {
                   <Brain className="h-8 w-8 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-white">Second Brain</span>
-              </Link>
+          </Link>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-4">
                 <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
                 <span className="text-xs font-semibold text-white">Create account</span>
@@ -107,25 +107,25 @@ export default function SignupPage() {
                 </span>
               </h1>
               <p className="text-white/70 text-center">Join thousands of knowledge workers</p>
-            </div>
+        </div>
 
             {/* Form Card */}
             <div className="relative rounded-3xl border-2 border-white/20 bg-slate-900/95 backdrop-blur-2xl p-8 shadow-2xl overflow-hidden">
               {/* Background gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10" />
               <div className="relative z-10">
-                <SignupForm />
+          <SignupForm />
               </div>
-            </div>
+        </div>
 
             {/* Footer Links */}
             <div className="mt-8 text-center space-y-4">
               <p className="text-sm text-white/60">
-                Already have an account?{" "}
+          Already have an account?{" "}
                 <Link href="/auth/login" className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">
-                  Sign in
-                </Link>
-              </p>
+            Sign in
+          </Link>
+        </p>
               <Link href="/" className="inline-block text-sm text-white/50 hover:text-white/70 transition-colors">
                 ← Back to home
               </Link>

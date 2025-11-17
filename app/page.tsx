@@ -46,7 +46,7 @@ export default function Home() {
             <Link href="/" className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
                 <Brain className="h-5 w-5 text-white" />
-              </div>
+            </div>
               <span className="text-lg font-bold text-white">Second Brain</span>
             </Link>
             <div className="hidden md:flex items-center gap-6">
