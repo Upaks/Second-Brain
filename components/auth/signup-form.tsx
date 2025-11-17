@@ -46,7 +46,12 @@ export function SignupForm() {
         throw new Error(data.error || "Failed to create account")
       }
 
-      const callbackUrl = searchParams.get("redirect") ?? "/dashboard"
+      const redirectParam = searchParams.get("redirect")
+      const planParam = searchParams.get("plan")
+      
+      // Always use a valid path for NextAuth callbackUrl
+      const callbackUrl = "/dashboard"
+
       const result = await signIn("credentials", {
         redirect: false,
         email,
@@ -58,7 +63,12 @@ export function SignupForm() {
         throw new Error(result.error)
       }
 
-      router.push(result?.url ?? callbackUrl)
+      // If they came from checkout, redirect to pricing page with plan parameter
+      if (redirectParam === "checkout" && planParam) {
+        router.push(`/#pricing?plan=${planParam}`)
+      } else {
+        router.push(result?.url ?? callbackUrl)
+      }
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong")

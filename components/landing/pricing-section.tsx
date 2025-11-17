@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, ArrowRight, Sparkles, Zap } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckoutButton } from "./checkout-button"
 
 export function PricingSection() {
   const plans = [
@@ -123,20 +124,37 @@ export function PricingSection() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className={`w-full mt-6 h-12 font-semibold ${
-                    plan.popular
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50"
-                      : "bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20"
-                  } hover:scale-105 transition-all`}
-                  size="lg"
-                  asChild
-                >
-                  <Link href={plan.name === "Team" ? "mailto:sales@secondbrain.com" : "/auth/signup"}>
-                    {plan.cta}
-                    {plan.name !== "Team" && <ArrowRight className="ml-2 h-4 w-4" />}
-                  </Link>
-                </Button>
+                {plan.name === "Team" ? (
+                  <Button
+                    className="w-full mt-6 h-12 font-semibold bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:scale-105 transition-all"
+                    size="lg"
+                    asChild
+                  >
+                    <Link href="mailto:sales@secondbrain.com">{plan.cta}</Link>
+                  </Button>
+                ) : plan.name === "Free" ? (
+                  <Button
+                    className="w-full mt-6 h-12 font-semibold bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:scale-105 transition-all"
+                    size="lg"
+                    asChild
+                  >
+                    <Link href="/auth/signup">
+                      {plan.cta}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <CheckoutButton
+                    plan={plan.name === "Pro" ? "PRO" : "TEAM"}
+                    cta={plan.cta}
+                    variant={plan.popular ? "popular" : "default"}
+                    className={`w-full mt-6 h-12 font-semibold ${
+                      plan.popular
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50"
+                        : "bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20"
+                    } hover:scale-105 transition-all`}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}
