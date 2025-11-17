@@ -4,17 +4,19 @@ import { stripe, PRICE_ID_TO_PLAN } from "@/lib/stripe"
 import { prisma } from "@/lib/db"
 import Stripe from "stripe"
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
-if (!webhookSecret) {
-  throw new Error("STRIPE_WEBHOOK_SECRET is not set")
-}
-
-// Type assertion: webhookSecret is guaranteed to be string after the check above
-const WEBHOOK_SECRET: string = webhookSecret
-
 export async function POST(request: NextRequest) {
   try {
+    // Check webhook secret at runtime (not module level) to avoid build errors
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+    if (!webhookSecret) {
+      console.error("[v0] STRIPE_WEBHOOK_SECRET is not set")
+      return NextResponse.json(
+        { error: "Webhook secret not configured" },
+        { status: 500 }
+      )
+    }
+
     const body = await request.text()
     const headersList = await headers()
     const signature = headersList.get("stripe-signature")
@@ -26,7 +28,7 @@ export async function POST(request: NextRequest) {
     let event: Stripe.Event
 
     try {
-      event = stripe.webhooks.constructEvent(body, signature, WEBHOOK_SECRET)
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
     } catch (err) {
       console.error("[v0] Webhook signature verification failed:", err)
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
